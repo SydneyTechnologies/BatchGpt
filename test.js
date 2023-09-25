@@ -42,7 +42,7 @@ const chatGpt = new ChatGpt({
 const messages = [
   {
     role: "user",
-    content: `For an "About" section, write a headline for "${gmbKey}" business based in "${placeCountry}" called "${businessName}". The headline should be less than 10 words. In the headline, give a glimpse of what the business is. Also provide a paragraph in no less than 40 words. Mention the mission, aims and goals the business has. Make sure to include these keywords "${keywords}" in the content. Don't use the word "About".`,
+    content: `For an "About" section, write a headline for "${gmbKey}" business based in "${placeCountry}" called "${businessName}". The headline should be less than 10 words. In the headline, give a glimpse of what the business is. Also provide a paragraph in no less than 40 words. Mention the mission, aims and goals the business has. Make sure to include these keywords "${keywords}" in the content. Don't use the word "About". `,
   },
 ];
 const functions = [funcSignature];
@@ -58,19 +58,23 @@ const newMessage = {
   functionSignature: funcSignature,
   priority: 1,
 };
-const [err, results] = await chatGpt.Parallel({
-  messageObjList: [newMessage, newMessage, newMessage, newMessage, newMessage],
-  concurrency: 1,
-  noRetries: 2,
+
+const message = {
+  prompt: `For an "About" section, write a headline for "${gmbKey}" business based in "${placeCountry}" called "${businessName}". The headline should be less than 10 words. In the headline, give a glimpse of what the business is. Also provide a paragraph in no less than 40 words. Mention the mission, aims and goals the business has. Make sure to include these keywords "${keywords}" in the content. Don't use the word "About".Your response should be in the following valid JSON structure:
+  {
+    "headline": "..",
+    "paragraph": ".."
+  }`,
+  priority: 1,
+};
+const results = await chatGpt.Parallel({
+  messageObjList: [newMessage, newMessage],
+  concurrency: 2,
+  noRetries: 3,
   retryDelay: 500,
   verbose: true,
-  timeout: 20000,
+  timeout: 6500,
   onResult: (result) => {
-    console.log("result", result);
+    console.log(result);
   },
 });
-
-console.log("results", results);
-// console.log("error", error);
-// console.log("gptResponse", gptResponse);
-// console.log("statusHistory", statusHistory);
