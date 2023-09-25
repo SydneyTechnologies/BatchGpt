@@ -325,12 +325,17 @@ class ChatGpt {
     rawResponse = results;
 
     results.map((result, index) => {
-      errorList[index] = result[0];
       response[index] = result[1];
     });
 
-    error = errorList.reduce((acc, curr) => {});
+    errorList = results.filter((result) => {
+      result[0] != null;
+    });
 
+    error =
+      Math.round(errorList.length / results.length) == 1 ? errorList : null;
+
+    results = [error, response, rawResponse];
     // callback function
     function OnResult(onResult) {
       onResult(results);
