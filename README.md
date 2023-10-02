@@ -47,7 +47,7 @@ Below is a list of all the parameters that can be set in the constructor of the 
 | temperature | 1               | This temperature set for the model read more in the openai documentation. | No       |
 | retryCount  | 0               | Number of retries per request.                                            | No       |
 | retryDelay  | null            | How long to wait before retrying a request                                | No       |
-| timemout    | 5 _ 60 _ 1000   | Max time a request can take before, it is rejected                        | No       |
+| timemout    | 5 x 60 \_ 1000  | Max time a request can take before, it is rejected                        | No       |
 | concurrency | 1               | For parallel requests, how many operations should run at a time           | No       |
 | verbose     | false           | If true, will log all requests and responses to the console.              | No       |
 
@@ -90,16 +90,16 @@ The `request` method that actually sends a request to the openai api for chatgpt
 
 Below is a list of all the parameters that can be set for the request function. Note that setting things that already setup in the constructor for the class will lead to an override for this specific request.
 
-| Parameters      | Default       | Description                                                                                           | Required |
-| --------------- | ------------- | ----------------------------------------------------------------------------------------------------- | -------- |
-| messages        |               | This is a list of prompt messages to send to the api                                                  | Yes      |
-| functions       | null          | This defines list of function signatures for gpt function calling approach.                           | No       |
-| retryCount      | 0             | Number of retries per request.                                                                        | No       |
-| retryDelay      | null          | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}`          | No       |
-| timemout        | 5 _ 60 _ 1000 | Max time a request can take before, it is rejected                                                    | No       |
-| minResponseTime | 5 _ 60 _ 1000 | This sets a minimum time a response should take for it to be regarded as a valid response             | No       |
-| minTokens       | null          | This sets a minimum number of tokens a response should have for it to be regarded as a valid response | No       |
-| verbose         | false         | If true, will log all requests and responses to the console.                                          | No       |
+| Parameters      | Default       | Description                                                                                                  | Required |
+| --------------- | ------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
+| messages        |               | This is a list of prompt messages to send to the api                                                         | Yes      |
+| functions       | null          | This defines list of function signatures for gpt function calling approach.                                  | No       |
+| retryCount      | 0             | Number of retries per request.                                                                               | No       |
+| retryDelay      | null          | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}`. (Milliseconds) | No       |
+| timemout        | 5 x 60 x 1000 | Max time a request can take before, it is rejected . (Milliseconds)                                          | No       |
+| minResponseTime | 5 x 60 x 1000 | This sets a minimum time a response should take for it to be regarded as a valid response. (Milliseconds)    | No       |
+| minTokens       | null          | This sets a minimum number of tokens a response should have for it to be regarded as a valid response        | No       |
+| verbose         | false         | If true, will log all requests and responses to the console.                                                 | No       |
 
 ### return
 
@@ -176,9 +176,9 @@ Below is a list of all the parameters that can be set for the parallel function.
 | messageObjList  |               | This is a list of messages objects needed to construct the correct api request                                 | Yes      |
 | concurrency     | 1             | For parallel requests, how many operations should run at a time                                                | No       |
 | retryCount      | 0             | Number of retries per request.                                                                                 | No       |
-| retryDelay      | null          | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}`                   | No       |
-| timemout        | 5 _ 60 _ 1000 | Max time a request can take before, it is rejected                                                             | No       |
-| minResponseTime | 5 _ 60 _ 1000 | This sets a minimum time a response should take for it to be regarded as a valid response                      | No       |
+| retryDelay      | null          | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}` . (Milliseconds)  | No       |
+| timemout        | 5 x 60 x 1000 | Max time a request can take before, it is rejected. (Milliseconds)                                             | No       |
+| minResponseTime | 5 x 60 x 1000 | This sets a minimum time a response should take for it to be regarded as a valid response. (Milliseconds)      | No       |
 | minTokens       | null          | This sets a minimum number of tokens a response should have for it to be regarded as a valid response          | No       |
 | verbose         | false         | If true, will log all requests and responses to the console.                                                   | No       |
 | onResponse      | null          | This is a callback function that is called when a request has been completed. `(response, index, prompt)=>{ }` | No       |
