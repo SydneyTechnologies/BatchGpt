@@ -3,6 +3,7 @@
 // Imports
 import PQueue from "p-queue";
 
+// UTILITY FUNCTIONS
 /**
  *  delay function, delays the execution of the next function call by the specified time
  *  @param {number} time time in milliseconds to delay
@@ -11,6 +12,32 @@ const delay = async (time) => {
   await new Promise((resolve) => setTimeout(resolve, time));
 };
 
+/**
+ *  isJson function, checks if a string is valid JSON
+ *  @param {string} str potential JSON string to check
+ */
+const isJson = (str) => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ *  fromJsonToObject function, converts a JSON string to a Javascript object
+ *  @param {string} jsonString JSON string
+ *  @returns {Object} returns a Javascript object
+ */
+const fromJsonToObject = (jsonString) => {
+  try {
+    return JSON.parse(jsonString);
+  } catch (e) {
+    this.logger("Input string is an Invalid JSON string");
+    throw new Error("Input string is an Invalid JSON string");
+  }
+};
 class Logger {
   // set up helper functions
   /**
@@ -34,14 +61,14 @@ class ChatGpt {
    *  @param {string} model This is the model that will be initialized for the api
    *  @param {number} temperature This temperature set for the model read more in the openai documentation. Default is 1.
    *  @param {number} retryCount Number of retries per request. Default is 0
-   *  @param {number} retryDelay How long to wait before retrying a request. Default is null (value in milliseconds)
+   *  @param {number || function(): number} retryDelay How long to wait before retrying a request. Default is 0 (value in milliseconds). It could also be a function that returns a number
    *  @param {number} timeout Max time a request can take before, it is rejected Default is 5 minutes (300,000 milliseconds), set to null if you do not wish to timeout.
    *  @param {number} concurrency For parallel requests, how many operations should run at a time, default is 1
    *  @param {boolean} verbose If true, will log all requests and responses to the console. Default is false
    */
   constructor({
     openai,
-    model,
+    model = "gpt-3.5-turbo",
     temperature = 1,
     retryCount = 0,
     retryDelay = 0,
@@ -60,33 +87,6 @@ class ChatGpt {
   }
 
   /**
-   *  isJson function, checks if a string is valid JSON
-   *  @param {string} str potential JSON string to check
-   */
-  isJson = (str) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  };
-
-  /**
-   *  fromJsonToObject function, converts a JSON string to a Javascript object
-   *  @param {string} jsonString JSON string
-   *  @returns {Object} returns a Javascript object
-   */
-  fromJsonToObject = (jsonString) => {
-    try {
-      return JSON.parse(jsonString);
-    } catch (e) {
-      this.logger("Input string is an Invalid JSON string");
-      throw new Error("Input string is an Invalid JSON string");
-    }
-  };
-
-  /**
    *  getToken function, calculates the tokens recieved from the gpt api
    *  @param {string} response passed into this function should the raw response from the chatgpt api
    *  @returns {number} returns the number of tokens recieved from the api as a number
@@ -101,7 +101,7 @@ class ChatGpt {
    *  @param {[{role: string, content: string}]} messages This is a list of prompt messages to send to the api
    *  @param {number} retryCount This is the number of retries for the request. Default is what is set in the constructor for the class. If not set it is 0
    *  @param {[Object]} functions This defines list of function signatures for gpt function calling approach.
-   *  @param {number} retryDelay This is the delay between retries for the request. Default is what is set in the constructor for the class. If not set it is 1000ms
+   *  @param @param {number || function(): number} retryDelay This is the delay between retries for the request. Default is what is set in the constructor for the class. Default is 0
    *  @param {boolean} verbose This is the verbose setting for the request. Default is what is set in the constructor for the class. If not set it is false
    *  @param {number} minResponseTime This sets a minimum time a response should take for it to be regarded as a valid response. Default is 3000ms
    *  @param {number} minTokens This sets a minimum number of tokens a response should have for it to be regarded as a valid response. Default is 10
@@ -120,7 +120,7 @@ class ChatGpt {
   }) {
     let error = null;
     let gptResponse = null;
-    let retryAttempt = 0;
+    let retryAttempt = -1;
     let statusHistory = [];
 
     // instantiate logger
@@ -164,8 +164,7 @@ class ChatGpt {
         // get response content from the api
         const responseContent = response.choices[0].message;
         log("RESPONSE RECEIVED");
-        // log(responseContent);
-        console.log(responseContent);
+        log(responseContent);
 
         let fnCallArguments = null;
         if (functions) {
@@ -176,7 +175,7 @@ class ChatGpt {
           }
 
           // Check if response is empty or valid JSON
-          fnCallArguments = this.fromJsonToObject(
+          fnCallArguments = fromJsonToObject(
             responseContent.function_call.arguments
           );
           if (Object.keys(fnCallArguments).length === 0) {
@@ -186,7 +185,8 @@ class ChatGpt {
         } else {
           // if call is invoked as a regular gpt prompt
           // Check if response is empty or valid JSON
-          if (!this.isJson(responseContent.content)) {
+          if (!isJson(responseContent.content)) {
+            log("Invalid JSON response");
             log("Empty response");
             throw new Error("Empty response");
           }
@@ -227,8 +227,7 @@ class ChatGpt {
       } catch (e) {
         // call on error function if set
 
-        log("ERROR");
-        log(e);
+        log("ERROR", e.message);
         end = Date.now();
         // if any one of the try block fails, log the status history and retry the request
         error = e.message;
@@ -239,9 +238,15 @@ class ChatGpt {
         });
 
         // if retryDelay is set, wait for the specified time before retrying the request
-        if (retryDelay > 0) {
-          log(`Waiting for ${retryDelay} milliseconds before retrying`);
-          await delay(retryDelay);
+        if (typeof retryDelay !== "function") {
+          if (retryDelay > 0 && retryAttempt < retryCount) {
+            log(`Waiting for ${retryDelay} milliseconds before retrying`);
+            await delay(retryDelay);
+          }
+        } else if (retryAttempt < retryCount) {
+          const retryDelayValue = retryDelay(retryAttempt);
+          log(`Waiting for ${retryDelayValue} milliseconds before retrying`);
+          await delay(retryDelayValue);
         }
       }
     }
@@ -258,14 +263,12 @@ class ChatGpt {
    *  @param {verbose} verbose This is the verbose setting for the request. Default is what is set in the constructor for the class. If not set it is false
    *  @param {number} minResponseTime This sets a minimum time a response should take for it to be regarded as a valid response. Default is 3000ms
    *  @param {number} timeout Max time a request can take before, it is rejected Default is 15000ms (value in milliseconds)
-   *  @param {function} onResult This is a callback function that is called when a request has been completed.
-   *  @param {function} onError This is a callback function that is called when a requests errors out.
+   *  @param {function} onResponse This is a callback function that is called when a request has been completed.
    *  @returns {Array} [error, response, statusHistory]. error tells us if the response failed or not (it contains an error message, which states what went wrong). response is an object containing the response from the api. statusHistory is an array of objects containing the status of each attempted request and the result of the request
    */
   async parallel({
     messageObjList,
-    onError = null,
-    onResult = null,
+    onResponse = null,
     verbose = this.verbose,
     minResponseTime = null,
     timeout = this.timeout,
@@ -279,7 +282,7 @@ class ChatGpt {
 
     // generate a list of promises for each request from the messageObjList
     log("Generating promises for each request");
-    const requests = messageObjList.map((message, index) => {
+    const requests = messageObjList.map((message) => {
       let promise;
 
       promise = async () => {
@@ -294,8 +297,6 @@ class ChatGpt {
           timeout,
           retryCount,
           retryDelay,
-          onResult,
-          onError,
         });
         return response;
       };
@@ -310,10 +311,8 @@ class ChatGpt {
       concurrency,
     });
 
-    queue.on("completed", (result) => {
-      console.log("COMPLETED");
-
-      console.log(result);
+    queue.on("completed", ([response, index, prompt]) => {
+      onResponse && onResponse(response, index, prompt);
     });
 
     // add each request to the queue
@@ -322,7 +321,7 @@ class ChatGpt {
       const request = queue.add(
         async () => {
           const value = await promise();
-          return [...value, index, messageObjList[index].prompt];
+          return [value, index, messageObjList[index].prompt];
         },
         { priority }
       );
@@ -330,26 +329,18 @@ class ChatGpt {
       return request;
     });
 
-    // for (let i = 0; i < promises.length; i++) {
-    //   const promise = promises[i];
-    //   (async () => {
-    //     const result = await promise;
-    //     onResult && onResult(result, i);
-    //   })();
-    // }
     const results = await Promise.all(promises);
-    // const results = [];
 
     log("All requests completed");
     // Initialize result variables
     let error = null;
     const errorList = [];
     const response = [];
-    const rawResponse = results;
+    const rawResponse = results.map((result) => result[0]);
 
     // Extract response and error information
     results.forEach((result) => {
-      const [currentError, currentResponse] = result;
+      const [currentError, currentResponse] = result[0];
       response.push(currentResponse);
 
       if (currentError !== null) {

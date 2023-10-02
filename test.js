@@ -60,58 +60,31 @@ const newMessage = {
   priority: 1,
 };
 
-// const message = {
-//   prompt: `For an "About" section, write a headline for "${gmbKey}" business based in "${placeCountry}" called "${businessName}". The headline should be less than 10 words. In the headline, give a glimpse of what the business is. Also provide a paragraph in no less than 40 words. Mention the mission, aims and goals the business has. Make sure to include these keywords "${keywords}" in the content. Don't use the word "About".Your response should be in the following valid JSON structure:
-//   {
-//     "headline": "..",
-//     "paragraph": ".."
-//   }`,
-//   priority: 1,
-// };
-
-const message1 = { prompt: "how much is 1 + 1" };
-const message2 = { prompt: "how much is 1 + 2" };
-const message3 = { prompt: "how much is 1 + 3" };
-const message4 = { prompt: "how much is 1 + 4" };
-const message5 = { prompt: "how much is 1 + 5" };
-const message6 = { prompt: "how much is 1 + 6" };
-const message7 = { prompt: "how much is 1 + 7" };
-const message8 = { prompt: "how much is 1 + 8" };
-const message9 = { prompt: "how much is 1 + 9" };
-const message10 = { prompt: "how much is 1 + 10" };
+const message = {
+  prompt: `For an "About" section, write a headline for "${gmbKey}" business based in "${placeCountry}" called "${businessName}". The headline should be less than 10 words. In the headline, give a glimpse of what the business is. Also provide a paragraph in no less than 40 words. Mention the mission, aims and goals the business has. Make sure to include these keywords "${keywords}" in the content. Don't use the word "About".Your response should be in the following valid JSON structure:
+  {
+    "headline": "..",
+    "paragraph": ".."
+  }`,
+  priority: 1,
+};
 
 const [error, response, rawResponse] = await chatGpt.parallel({
-  // messageObjList: [message],
-  messageObjList: [
-    message1,
-    message2,
-    message3,
-    message4,
-    message5,
-    message6,
-    message7,
-    message8,
-    message9,
-    message10,
-  ],
-  concurrency: 3,
-  retryCount: 1,
-  retryDelay: 500,
-  verbose: false,
-  // timeout: 2000,
-  // onResult: (result, i) => {
-  //   console.log("RESULT", i);
-
-  //   // console.log(util.inspect(result, { depth: null, colors: true }));
-  // },
-  // onError: (error) => {
-  //   console.log(util.inspect(error, { depth: null, colors: true }));
-  // },
+  messageObjList: [message],
+  concurrency: 1,
+  retryCount: 2,
+  retryDelay: (value) => (value + 1) * 1000,
+  verbose: true,
+  timeout: 2000,
+  onResponse: (result, i, prompt) => {
+    // console.log("result\n", result[2]);
+    // console.log(util.inspect(result, { depth: null, colors: true }));
+  },
 });
 
-// console.log("ERROR", util.inspect(error, { depth: null, colors: true }));
-// console.log("RESPONSE", util.inspect(response, { depth: null, colors: true }));
-// console.log(
-//   "RAW RESPONSE",
-//   util.inspect(rawResponse, { depth: null, colors: true })
-// );
+// console.log("error", util.inspect(error, { depth: null, colors: true }));
+// console.log("response", util.inspect(response, { depth: null, colors: true }));
+console.log(
+  "rawresponse",
+  util.inspect(rawResponse, { depth: null, colors: true })
+);
