@@ -40,16 +40,16 @@ The starting point is the ChatGpt class, to utilize most of the features of this
 
 Below is a list of all the parameters that can be set in the constructor of the ChatGpt class. The only required parameter that needs to be set is the openai object.
 
-| Parameters  | Default         | Description                                                               | Required |
-| ----------- | --------------- | ------------------------------------------------------------------------- | -------- |
-| openai      |                 | Openai object to interface with the api                                   | Yes      |
-| model       | "gpt-3.5-turbo" | This is the model that will be initialized for the api                    | No       |
-| temperature | 1               | This temperature set for the model read more in the openai documentation. | No       |
-| retryCount  | 0               | Number of retries per request.                                            | No       |
-| retryDelay  | null            | How long to wait before retrying a request                                | No       |
-| timemout    | 5 x 60 x 1000   | Max time a request can take before, it is rejected                        | No       |
-| concurrency | 1               | For parallel requests, how many operations should run at a time           | No       |
-| verbose     | false           | If true, will log all requests and responses to the console.              | No       |
+| Parameters  | Default              | Description                                                                                                  | Required |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
+| openai      |                      | Openai object to interface with the api                                                                      | Yes      |
+| model       | "gpt-3.5-turbo-0613" | This is the model that will be initialized for the api                                                       | No       |
+| temperature | 1                    | This temperature set for the model read more in the openai documentation.                                    | No       |
+| retryCount  | 0                    | Number of retries per request.                                                                               | No       |
+| retryDelay  | null                 | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}`. (Milliseconds) | No       |
+| timemout    | 5 x 60 x 1000        | Max time a request can take before, it is rejected                                                           | No       |
+| concurrency | 1                    | For parallel requests, how many operations should run at a time                                              | No       |
+| verbose     | false                | If true, will log all requests and responses to the console.                                                 | No       |
 
 ### Simple example
 
