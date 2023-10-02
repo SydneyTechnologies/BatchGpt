@@ -47,7 +47,7 @@ Below is a list of all the parameters that can be set in the constructor of the 
 | temperature | 1               | This temperature set for the model read more in the openai documentation. | No       |
 | retryCount  | 0               | Number of retries per request.                                            | No       |
 | retryDelay  | null            | How long to wait before retrying a request                                | No       |
-| timemout    | 5 x 60 \_ 1000  | Max time a request can take before, it is rejected                        | No       |
+| timemout    | 5 x 60 x 1000   | Max time a request can take before, it is rejected                        | No       |
 | concurrency | 1               | For parallel requests, how many operations should run at a time           | No       |
 | verbose     | false           | If true, will log all requests and responses to the console.              | No       |
 
