@@ -135,11 +135,11 @@ const functionSignature = {
   name: "translate_to_french",
   description: `Translates any english word to french`,
   parameters: {
-    type: "string",
+    type: "object",
     properties: {
       french: {
         type: "string",
-        description: "Hello, how are you? to French.",
+        description: "Hello, how are you? in French.",
       },
     },
   },

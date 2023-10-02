@@ -5,36 +5,37 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai, verbose: false, timeout: 8000 });
+const chatGpt = new ChatGpt({ openai });
 
-// List of translation tasks to be processed in parallel
-const translationTasks = [
-  { text: "Hello", language: "es", priority: 1 }, // Translate 'Hello' to Spanish
-  { text: "Bonjour", language: "de", priority: 2 }, // Translate 'Bonjour' to German
-  { text: "Ciao", language: "fr", priority: 0 }, // Translate 'Ciao' to French
-];
-
-async function main() {
-  try {
-    // Perform parallel tasks with dynamic retryDelay
-    await chatGpt.parallel({
-      messageObjList: translationTasks.map((task) => {
-        return {
-          prompt: `Translate '${task.text}' to ${task.language}. Your response should be in the following valid JSON structure: { "word": ".." , "fromLanguage": ".." , translation: "..", toLanguage: ".."}`,
-          priority: task.priority,
-        };
-      }),
-      concurrency: 3,
-      retryCount: 3, // Retry each task 3 times on failure
-      retryDelay: (value) => value * 1000, // Retry delay in milliseconds
-      onResponse: (result) => {
-        console.log("result\n", result[1]);
+const functionSignature = {
+  name: "translate_to_french",
+  description: `Translates any english word to french`,
+  parameters: {
+    type: "object",
+    properties: {
+      french: {
+        type: "string",
+        description: "Hello, how are you? in French.",
       },
-    });
-  } catch (error) {
-    console.error("Error:", error);
-  }
-}
+    },
+  },
+  required: ["french"],
+};
+const [error, response, statusHistory] = await chatGpt.request({
+  messages: [
+    {
+      role: "user",
+      content: 'Translate the following text: "Hello, how are you?" to French.',
+    },
+  ],
+  functions: [functionSignature],
+  retryCount: 1,
+  timeout: 2 * 60 * 1000,
+  minTokens: 10,
+  retryDelay: (count) => count,
+  verbose: true,
+});
 
-// Run the main function
-main();
+console.log(error, response, statusHistory);
+
+// This example shows how to make use of the request function, using function calling syntax. This is determined by specifiy a functions list in the parameters. We set the request to be retried only once it the initial request fails. We have also set the timemout for the request to 2 mins, it the request takes longer then the request is rejected and retried if (the retry count has not be exceeded). We have also set that open recieving a response that response must contain above 10 tokens to be considered a valid response.
