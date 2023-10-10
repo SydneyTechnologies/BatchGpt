@@ -115,7 +115,9 @@ The function returns an array of objects in the same positional order as shown b
 ### Simple example
 
 ```js
-// Note this is partial code showing only the relevant portions for this section
+import ChatGpt from "@one.com/chatGpt";
+import OpenAI from "openai";
+
 const chatGpt = new ChatGpt({ openai });
 const messages = [
   {
@@ -130,36 +132,57 @@ const [err, response] = await chatGpt.request({ messages });
 ### Advanced example
 
 ```js
+import ChatGpt from "@one.com/chatGpt";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.API_KEY });
 const chatGpt = new ChatGpt({ openai });
 
 const functionSignature = {
-  name: "translate_to_french",
-  description: `Translates any english word to french`,
+  name: "get_current_weather",
+  description: "Get the current weather in a given location",
   parameters: {
     type: "object",
     properties: {
-      french: {
+      location: {
         type: "string",
-        description: "Hello, how are you? in French.",
+        description: "The city and state, e.g. San Francisco, CA",
       },
+      unit: { type: "string", enum: ["celsius", "fahrenheit"] },
     },
+    required: ["location"],
   },
-  required: ["french"],
 };
+
 const [error, response, statusHistory] = await chatGpt.request({
   messages: [
     {
       role: "user",
-      content: 'Translate the following text: "Hello, how are you?" to French.',
+      content: `What is the weather in Albuquerque?`,
     },
   ],
-  functions: [functionSignature],
+  functions: [
+    {
+      functionSignature,
+      function: async ({ location }) => {
+        return {
+          location: "Albuquerque",
+          temperature: "72",
+          unit: "fahrenheit",
+          forecast: ["sunny", "windy"],
+        };
+      },
+    },
+  ],
+  ensureJson: true,
   retryCount: 1,
   timeout: 2 * 60 * 1000,
   minTokens: 10,
   retryDelay: (count) => count,
   verbose: true,
 });
+
+console.log(error, response, statusHistory);
 
 // This example shows how to make use of the request function, using function calling syntax. This is determined by specifiy a functions list in the parameters. We set the request to be retried only once it the initial request fails. We have also set the timemout for the request to 2 mins, it the request takes longer then the request is rejected and retried if (the retry count has not be exceeded). We have also set that open recieving a response that response must contain above 10 tokens to be considered a valid response.
 ```
@@ -196,7 +219,13 @@ The function returns an array of objects in the same positional order as shown b
 
 ### Simple example
 
-```jsx
+```js
+import ChatGpt from "@one.com/chatGpt";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const chatGpt = new ChatGpt({ openai });
+
 // Sending parallel requests using the Parallel method
 const messageObjList = [
   { prompt: "Translate 'apple' to Spanish." },
@@ -215,9 +244,6 @@ await chatGpt.Parallel({
 ```js
 import ChatGpt from "@one.com/chatGpt";
 import OpenAI from "openai";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
 const chatGpt = new ChatGpt({ openai, verbose: false, timeout: 8000 });
