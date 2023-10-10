@@ -23,9 +23,9 @@ const [err, response, statusHistory] = await chatGpt.request({
 //use response
 if (!err) {
   // Do something with response
-  console.log(err, typeof err);
+  // console.log(err, typeof err);
 
-  console.log(response);
+  console.log(statusHistory);
 
   console.log(response);
 }

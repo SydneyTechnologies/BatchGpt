@@ -106,25 +106,11 @@ Below is a list of all the parameters that can be set for the request function. 
 
 The function returns an array of objects in the same positional order as shown below
 
-| return   | type                 | Example                     | Description                                          |
-| -------- | -------------------- | --------------------------- | ---------------------------------------------------- |
-| error    | `<string>` or `null` | null or "request timed out" | This is a list of prompt messages to send to the api |
-| response | `<object>`           | {                           |
-
-content: "I'm sorry, but I don't have access to personal information about individuals unless it has been shared with me in the course of our conversation.",
-time_per_token: 68
-} | This is the response gotten from the GPT api, it is an object with a content and time_per_token property `{content:"", time_per_token:0}` |
-| statusHistory | [
-{
-status: 'success',
-response: {
-content: "I'm sorry, but I don't have access to personal information about individuals unless it has been shared with me in the course of our conversation.",
-time_per_token: 68
-},
-responseTime: 1958,
-tokens: 29
-}
-] | | Array of the results of all the retries for a specific request. Each individual object has this structure `{status:"failure", response: "Timed out", responseTime: 2002}` |
+| return        | type                 | Example                                                            | Description                                                     |
+| ------------- | -------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- |
+| error         | `<string>` or `null` | null or "request timed out"                                        | This is a list of prompt messages to send to the api            |
+| response      | `<object>`           | { content: "...", time_per_token: 68 }                             | This is the response gotten from the GPT api                    |
+| statusHistory | `Array<object>`      | [ {status: 'success', response: {},responseTime: 2195,tokens: 26}] | Array of the results of all the retries for a specific request. |
 
 ### Simple example
 
@@ -213,9 +199,9 @@ The function returns an array of objects in the same positional order as shown b
 ```jsx
 // Sending parallel requests using the Parallel method
 const messageObjList = [
-  { prompt: "Translate 'apple' to Spanish.", priority: 1 },
-  { prompt: "Translate 'cat' to French.", priority: 2 },
-  { prompt: "Translate 'dog' to German.", priority: 3 }, // the highest priority is executed first
+  { prompt: "Translate 'apple' to Spanish." },
+  { prompt: "Translate 'cat' to French." },
+  { prompt: "Translate 'dog' to German." }, // the highest priority is executed first
 ];
 
 await chatGpt.Parallel({
@@ -238,9 +224,9 @@ const chatGpt = new ChatGpt({ openai, verbose: false, timeout: 8000 });
 
 // List of translation tasks to be processed in parallel
 const translationTasks = [
-  { text: "Hello", language: "es", priority: 1 }, // Translate 'Hello' to Spanish
-  { text: "Bonjour", language: "de", priority: 2 }, // Translate 'Bonjour' to German
-  { text: "Ciao", language: "fr", priority: 0 }, // Translate 'Ciao' to French
+  { text: "Hello", language: "es" }, // Translate 'Hello' to Spanish
+  { text: "Bonjour", language: "de" }, // Translate 'Bonjour' to German
+  { text: "Ciao", language: "fr" }, // Translate 'Ciao' to French
 ];
 
 async function main() {
@@ -250,7 +236,6 @@ async function main() {
       messageObjList: translationTasks.map((task) => {
         return {
           prompt: `Translate '${task.text}' to ${task.language}. Your response should be in the following valid JSON structure: { "word": ".." , "fromLanguage": ".." , translation: "..", toLanguage: ".."}`,
-          priority: task.priority,
         };
       }),
       concurrency: 3,
