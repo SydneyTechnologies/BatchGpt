@@ -8,27 +8,42 @@ const openai = new OpenAI({ apiKey: process.env.API_KEY });
 const chatGpt = new ChatGpt({ openai });
 
 const functionSignature = {
-  name: "translate_to_french",
-  description: `Translates any english word to french`,
+  name: "get_current_weather",
+  description: "Get the current weather in a given location",
   parameters: {
     type: "object",
     properties: {
-      french: {
+      location: {
         type: "string",
-        description: "Hello, how are you? in French.",
+        description: "The city and state, e.g. San Francisco, CA",
       },
+      unit: { type: "string", enum: ["celsius", "fahrenheit"] },
     },
+    required: ["location"],
   },
-  required: ["french"],
 };
+
 const [error, response, statusHistory] = await chatGpt.request({
   messages: [
     {
       role: "user",
-      content: 'Translate the following text: "Hello, how are you?" to French.',
+      content: `What is the weather in Albuquerque?`,
     },
   ],
-  functions: [functionSignature],
+  functions: [
+    {
+      functionSignature,
+      function: async ({ location }) => {
+        return {
+          location: "Albuquerque",
+          temperature: "72",
+          unit: "fahrenheit",
+          forecast: ["sunny", "windy"],
+        };
+      },
+    },
+  ],
+  ensureJson: true,
   retryCount: 1,
   timeout: 2 * 60 * 1000,
   minTokens: 10,

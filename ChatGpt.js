@@ -87,6 +87,19 @@ class ChatGpt {
   }
 
   /**
+   * generateFunctionMap function, generates a function map from a list of function signatures and their corresponding functions
+   * @param {[{functionSignature: Object, function: function}]} functions This is a list of function signatures and their corresponding functions
+   * @returns {Object} returns a function map
+   */
+  generateFunctionMap(functions) {
+    const functionMap = {};
+    functions.forEach((functionObject) => {
+      functionMap[functionObject.functionSignature.name] =
+        functionObject.function;
+    });
+    return functionMap;
+  }
+  /**
    *  getToken function, calculates the tokens recieved from the gpt api
    *  @param {string} response passed into this function should the raw response from the chatgpt api
    *  @returns {number} returns the number of tokens recieved from the api as a number
@@ -106,12 +119,14 @@ class ChatGpt {
    *  @param {number} minResponseTime This sets a minimum time a response should take for it to be regarded as a valid response. Default is 3000ms
    *  @param {number} minTokens This sets a minimum number of tokens a response should have for it to be regarded as a valid response. Default is 10
    *  @param {number} timeout Max time a request can take before, it is rejected Default is 15000ms (value in milliseconds), set to null if you do not wish to timeout.
+   *  @param {boolean} ensureJson This ensures that the response is valid JSON. Default is true
    *  @returns {Array} [error, response, statusHistory]. error tells us if the response failed or not (it contains an error message, which states what went wrong). response is an object containing the response from the api. statusHistory is an array of objects containing the status of each attempted request and the result of the request
    */
   async request({
     messages,
     minTokens = null,
     functions = null,
+    ensureJson = true,
     minResponseTime = null,
     timeout = this.timeout,
     verbose = this.verbose,
@@ -145,7 +160,7 @@ class ChatGpt {
           functions
             ? this.openai.chat.completions.create({
                 messages,
-                functions,
+                functions: functions.map((fn) => fn.functionSignature),
                 model: this.model,
                 temperature: this.temperature,
               })
@@ -166,13 +181,22 @@ class ChatGpt {
         log("RESPONSE RECEIVED");
         log(responseContent);
 
+        // function calling can be used in two ways, the first way is (to get a forced JSON response from chatGPT)
+        // the next way is to allow chat gpt to call an external function
         let fnCallArguments = null;
+        let fnResponse = null;
         if (functions) {
           // if call is invoked as a function call
           if (!responseContent.function_call) {
             log("Not a function call");
             throw new Error("Not a function call");
           }
+
+          // if the call is a function call then we need to know which function to call
+          const functionCallName = responseContent.function_call.name;
+          const functionMap = this.generateFunctionMap(functions);
+
+          log("function map", functionMap);
 
           // Check if response is empty or valid JSON
           fnCallArguments = fromJsonToObject(
@@ -182,10 +206,16 @@ class ChatGpt {
             log("Empty response");
             throw new Error("Empty response");
           }
+
+          // call the function if it exists and if ensureJSON is false
+          if (!ensureJson && functionMap[functionCallName]) {
+            const fn = functionMap[functionCallName];
+            fnResponse = await fn(fnCallArguments);
+          }
         } else {
           // if call is invoked as a regular gpt prompt
           // Check if response is empty or valid JSON
-          if (!isJson(responseContent.content)) {
+          if (ensureJson && !isJson(responseContent.content)) {
             log("Invalid JSON response");
             log("Empty response");
             throw new Error("Empty response");
@@ -211,7 +241,7 @@ class ChatGpt {
         }
         // if all checks pass, log status history and break out of while loop
         gptResponse = {
-          content: fnCallArguments || responseContent.content,
+          content: fnResponse || fnCallArguments || responseContent.content,
           time_per_token: Math.round(responseTime / tokens),
         };
         statusHistory.push({
@@ -289,19 +319,18 @@ class ChatGpt {
         const fn = this.request.bind(this);
         const response = fn({
           messages: [{ role: "user", content: message.prompt }],
-          functions: message.functionSignature
-            ? [message.functionSignature]
-            : null,
+          functions: message.functions ? [message.functions] : null,
           verbose,
           minResponseTime,
           timeout,
           retryCount,
           retryDelay,
+          ensureJson: message.ensureJson,
         });
         return response;
       };
 
-      return { promise, priority: message?.priority || 0 };
+      return promise;
     });
 
     log(requests);
@@ -317,14 +346,11 @@ class ChatGpt {
 
     // add each request to the queue
     log("Adding promise to queue");
-    const promises = requests.map(({ promise, priority }, index) => {
-      const request = queue.add(
-        async () => {
-          const value = await promise();
-          return [value, index, messageObjList[index].prompt];
-        },
-        { priority }
-      );
+    const promises = requests.map((promise, index) => {
+      const request = queue.add(async () => {
+        const value = await promise();
+        return [value, index, messageObjList[index].prompt];
+      });
 
       return request;
     });
