@@ -4,10 +4,10 @@
 
 The `ChatGpt` class is a JavaScript class designed to facilitate interactions with the ChatGPT API provided by OpenAI. It allows users to send requests to the API using either traditional prompting or function calling, and it includes options for managing request retries, timeouts, and concurrency. Below is a detailed documentation of the `ChatGpt` class and its methods.
 
-If you would like a quick example of how to make use of this library then the example below should be a great start. We are sending a simple prompt without functional calling syntax
+If you would like a quick example of how to make use of this library then the example below should be a great start. For more examples visit the [examples](https://github.com/SydneyTechnologies/GptLibrary/blob/master/examples) folder on this respository.
 
 ```js
-import ChatGpt from "ChatGpt";
+import ChatGpt from "@one.com/chatGpt";
 import OpenAI from "openai";
 
 // setup
@@ -22,11 +22,12 @@ const messages = [
       "Generate a script for a social media video showcasing our company culture",
   },
 ];
-const [err, response] = await chatGpt.request({ messages });
+const [err, response] = await chatGpt.request({ messages, ensureJson: false });
 
 //use response
 if (!err) {
   // Do something with response
+  console.log(response);
 }
 ```
 
@@ -40,21 +41,21 @@ The starting point is the ChatGpt class, to utilize most of the features of this
 
 Below is a list of all the parameters that can be set in the constructor of the ChatGpt class. The only required parameter that needs to be set is the openai object.
 
-| Parameters  | Default              | Description                                                                                                  | Required |
-| ----------- | -------------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
-| openai      |                      | Openai object to interface with the api                                                                      | Yes      |
-| model       | "gpt-3.5-turbo-0613" | This is the model that will be initialized for the api                                                       | No       |
-| temperature | 1                    | This temperature set for the model read more in the openai documentation.                                    | No       |
-| retryCount  | 0                    | Number of retries per request.                                                                               | No       |
-| retryDelay  | null                 | How long to wait before retrying a request. It could be a function `(count)=>{ count + 500}`. (Milliseconds) | No       |
-| timemout    | 5 \* 60 \* 1000      | Max time a request can take before, it is rejected                                                           | No       |
-| concurrency | 1                    | For parallel requests, how many operations should run at a time                                              | No       |
-| verbose     | false                | If true, will log all requests and responses to the console.                                                 | No       |
+| Parameters  | Default         | Description                                                                                                             | Required |
+| ----------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- | -------- |
+| openai      |                 | Openai object to interface with the api                                                                                 | Yes      |
+| model       | "gpt-3.5-turbo" | This is the model that will be initialized for the api                                                                  | No       |
+| temperature | 1               | This temperature set for the model read more in the openai documentation.                                               | No       |
+| retryCount  | 0               | Number of retries per request.                                                                                          | No       |
+| retryDelay  | null            | How long to wait before retrying a request. It could be a function `(retryCount)=>{ retryCount + 500 }`. (Milliseconds) | No       |
+| timemout    | 5 \* 60 \* 1000 | Max time a request can take before, it is rejected                                                                      | No       |
+| concurrency | 1               | For parallel requests, how many operations should run at a time                                                         | No       |
+| verbose     | false           | If true, will log all requests and responses to the console.                                                            | No       |
 
 ### Simple example
 
 ```js
-import ChatGpt from "ChatGpt";
+import ChatGpt from "@one.com/chatGpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
@@ -64,7 +65,7 @@ const chatGpt = new ChatGpt({ openai });
 ### Advanced example
 
 ```js
-import ChatGpt from "ChatGpt";
+import ChatGpt from "@one.com/chatGpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
@@ -105,11 +106,25 @@ Below is a list of all the parameters that can be set for the request function. 
 
 The function returns an array of objects in the same positional order as shown below
 
-| return        | type                 | Description                                                                                                                                                               |
-| ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| error         | `<string>` or `null` | This is a list of prompt messages to send to the api                                                                                                                      |
-| response      | `<object>`           | This is the response gotten from the GPT api, it is an object with a content and time_per_token property `{content:"", time_per_token:0}`                                 |
-| statusHistory | Array`<object>`      | Array of the results of all the retries for a specific request. Each individual object has this structure `{status:"failure", response: "Timed out", responseTime: 2002}` |
+| return   | type                 | Example                     | Description                                          |
+| -------- | -------------------- | --------------------------- | ---------------------------------------------------- |
+| error    | `<string>` or `null` | null or "request timed out" | This is a list of prompt messages to send to the api |
+| response | `<object>`           | {                           |
+
+content: "I'm sorry, but I don't have access to personal information about individuals unless it has been shared with me in the course of our conversation.",
+time_per_token: 68
+} | This is the response gotten from the GPT api, it is an object with a content and time_per_token property `{content:"", time_per_token:0}` |
+| statusHistory | [
+{
+status: 'success',
+response: {
+content: "I'm sorry, but I don't have access to personal information about individuals unless it has been shared with me in the course of our conversation.",
+time_per_token: 68
+},
+responseTime: 1958,
+tokens: 29
+}
+] | | Array of the results of all the retries for a specific request. Each individual object has this structure `{status:"failure", response: "Timed out", responseTime: 2002}` |
 
 ### Simple example
 
@@ -212,7 +227,7 @@ await chatGpt.Parallel({
 ### Advanced example
 
 ```js
-import ChatGpt from "./ChatGpt.js";
+import ChatGpt from "@one.com/chatGpt";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
