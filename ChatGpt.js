@@ -54,7 +54,7 @@ class Logger {
     }
   }
 }
-class ChatGpt {
+class BatchGpt {
   /**
    *  ChatGpt class constructor. This class is used to interface with the chatgpt api, and setup default values for the api
    *  @param  openai Openai object to interface with the api
@@ -88,14 +88,14 @@ class ChatGpt {
 
   /**
    * generateFunctionMap function, generates a function map from a list of function signatures and their corresponding functions
-   * @param {[{functionSignature: Object, function: function}]} functions This is a list of function signatures and their corresponding functions
+   * @param {[{functionSignature: Object, callback: function}]} functions This is a list of function signatures and their corresponding functions
    * @returns {Object} returns a function map
    */
   generateFunctionMap(functions) {
     const functionMap = {};
     functions.forEach((functionObject) => {
       functionMap[functionObject.functionSignature.name] =
-        functionObject.function;
+        functionObject.callback;
     });
     return functionMap;
   }
@@ -384,4 +384,4 @@ class ChatGpt {
   }
 }
 
-export default ChatGpt;
+export default BatchGpt;

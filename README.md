@@ -1,18 +1,18 @@
-# GPT LIBRARY DOCS
+# BatchGPT Docs
 
-# ChatGpt Documentation
+# BatchGpt Documentation
 
-The `ChatGpt` class is a JavaScript class designed to facilitate interactions with the ChatGPT API provided by OpenAI. It allows users to send requests to the API using either traditional prompting or function calling, and it includes options for managing request retries, timeouts, and concurrency. Below is a detailed documentation of the `ChatGpt` class and its methods.
+The `BatchGpt` class is a JavaScript class designed to facilitate interactions with the ChatGPT API provided by OpenAI. It allows users to send requests to the API using either traditional prompting or function calling, and it includes options for managing request retries, timeouts, and concurrency. Below is a detailed documentation of the `BatchGpt` class and its methods.
 
 If you would like a quick example of how to make use of this library then the example below should be a great start. For more examples visit the [examples](https://github.com/SydneyTechnologies/GptLibrary/blob/master/examples) folder on this respository.
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 // setup
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai, retryCount: 2 });
+const batchGpt = new BatchGpt({ openai, retryCount: 2 });
 
 // prompt
 const messages = [
@@ -33,13 +33,13 @@ if (!err) {
 
 For more advanced usage of the library for things like, concurrent requests, request timeouts, onResponse callbacks and function calling prompting then below is shows how to setup the gptClass for your needs.
 
-# ChatGpt Class
+# BatchGpt Class
 
-The starting point is the ChatGpt class, to utilize most of the features of this library we have to go through the parameters for constructing a ChatGpt class instance. Below is a list of all the parameters that can be set for the class, there is however only one required parameter which is the openai object.
+The starting point is the BatchGpt class, to utilize most of the features of this library we have to go through the parameters for constructing a BatchGpt class instance. Below is a list of all the parameters that can be set for the class, there is however only one required parameter which is the openai object.
 
 ### Parameters
 
-Below is a list of all the parameters that can be set in the constructor of the ChatGpt class. The only required parameter that needs to be set is the openai object.
+Below is a list of all the parameters that can be set in the constructor of the BatchGpt class. The only required parameter that needs to be set is the openai object.
 
 | Parameters  | Default         | Description                                                                                                             | Required |
 | ----------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -55,21 +55,21 @@ Below is a list of all the parameters that can be set in the constructor of the 
 ### Simple example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai });
+const batchGpt = new BatchGpt({ openai });
 ```
 
 ### Advanced example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({
+const batchGpt = new BatchGpt({
   openai,
   temperature: 1.2,
   retryCount: 2,
@@ -160,10 +160,10 @@ The function returns an array of objects in the same positional order as shown b
 ### Simple example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const chatGpt = new ChatGpt({ openai });
+const batchGpt = new BatchGpt({ openai });
 const messages = [
   {
     role: "user",
@@ -177,11 +177,11 @@ const [err, response] = await chatGpt.request({ messages });
 ### Advanced example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai });
+const batchGpt = new BatchGpt({ openai });
 
 const functionSignature = {
   name: "get_current_weather",
@@ -307,11 +307,11 @@ The function returns an array of objects in the same positional order as shown b
 ### Simple example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai });
+const batchGpt = new BatchGpt({ openai });
 
 // Sending parallel requests using the Parallel method
 const messageObjList = [
@@ -329,11 +329,11 @@ await chatGpt.parallel({
 ### Advanced example
 
 ```js
-import ChatGpt from "@one.com/chatGpt";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai, verbose: false, timeout: 8000 });
+const batchGpt = new BatchGpt({ openai, verbose: false, timeout: 8000 });
 
 // List of translation tasks to be processed in parallel
 const translationTasks = [

@@ -1,11 +1,11 @@
-import ChatGpt from "../ChatGpt.js";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai });
+const chatGpt = new BatchGpt({ openai });
 
 const functionSignature = {
   name: "get_current_weather",
@@ -33,7 +33,7 @@ const [error, response, statusHistory] = await chatGpt.request({
   functions: [
     {
       functionSignature,
-      function: async ({ location }) => {
+      callback: async ({ location }) => {
         return {
           location: "Albuquerque",
           temperature: "72",
@@ -43,7 +43,7 @@ const [error, response, statusHistory] = await chatGpt.request({
       },
     },
   ],
-  ensureJson: false,
+  ensureJson: true,
   retryCount: 1,
   timeout: 2 * 60 * 1000,
   minTokens: 10,

@@ -1,12 +1,11 @@
-// import ChatGpt from "ChatGpt";
-import ChatGpt from "../ChatGpt.js";
+import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
 // setup
 dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const chatGpt = new ChatGpt({ openai });
+const batchGpt = new BatchGpt({ openai });
 
 // Sending parallel requests using the Parallel method
 const messageList = [
@@ -15,7 +14,7 @@ const messageList = [
   { prompt: "Translate 'dog' to German." }, // the highest priority is executed first
 ];
 
-const [error, response, rawResponse] = await chatGpt.parallel({
+const [error, response, rawResponse] = await batchGpt.parallel({
   messageList,
   concurrency: 3,
   verbose: true,
