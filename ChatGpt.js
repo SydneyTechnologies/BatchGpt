@@ -126,7 +126,7 @@ class ChatGpt {
     messages,
     minTokens = null,
     functions = null,
-    ensureJson = true,
+    ensureJson = false,
     minResponseTime = null,
     timeout = this.timeout,
     verbose = this.verbose,
@@ -286,7 +286,7 @@ class ChatGpt {
 
   /**
    *  Sends parallel requests to the chatgpt api (using either function calling or regular gpt prompting)
-   *  @param {Array} messageObjList This is a list of prompt messages to send to the api, (each message object contains a prompt, an optional functionSignature property and an optional priority number property)
+   *  @param {Array} messageList This is a list of prompt messages to send to the api, (each message object contains a prompt, an optional functionSignature property and an optional priority number property)
    *  @param {number} concurrency For parallel requests, how many requests to send at once. Default is what is set in the constructor for the class. If not set it is 1
    *  @param {number} retryCount This is the number of retries for the request. Default is what is set in the constructor for the class. If not set it is 0
    *  @param {number} retryDelay This is the delay between retries for the request. Default is what is set in the constructor for the class. If not set it is 1000ms
@@ -297,7 +297,7 @@ class ChatGpt {
    *  @returns {Array} [error, response, statusHistory]. error tells us if the response failed or not (it contains an error message, which states what went wrong). response is an object containing the response from the api. statusHistory is an array of objects containing the status of each attempted request and the result of the request
    */
   async parallel({
-    messageObjList,
+    messageList,
     onResponse = null,
     verbose = this.verbose,
     minResponseTime = null,
@@ -310,9 +310,9 @@ class ChatGpt {
     const logger = new Logger({ verbose });
     const log = logger.log.bind(logger);
 
-    // generate a list of promises for each request from the messageObjList
+    // generate a list of promises for each request from the messageList
     log("Generating promises for each request");
-    const requests = messageObjList.map((message) => {
+    const requests = messageList.map((message) => {
       let promise;
 
       promise = async () => {
@@ -349,7 +349,7 @@ class ChatGpt {
     const promises = requests.map((promise, index) => {
       const request = queue.add(async () => {
         const value = await promise();
-        return [value, index, messageObjList[index].prompt];
+        return [value, index, messageList[index].prompt];
       });
 
       return request;

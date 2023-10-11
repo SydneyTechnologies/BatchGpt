@@ -1,4 +1,3 @@
-// import ChatGpt from "ChatGpt";
 import ChatGpt from "../ChatGpt.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
@@ -22,10 +21,5 @@ const [err, response, statusHistory] = await chatGpt.request({
 
 //use response
 if (!err) {
-  // Do something with response
-  // console.log(err, typeof err);
-
-  console.log(statusHistory);
-
-  console.log(response);
+  console.log(err, response, statusHistory);
 }
