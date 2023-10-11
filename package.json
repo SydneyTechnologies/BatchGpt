@@ -1,8 +1,24 @@
 {
+  "name":"batch-gpt",
+  "version": "0.0.1",
+  "description": "Perform multiple ChatGPT queries in parallel using the OpenAI API",
   "type": "module",
+  "license": "MIT",
   "dependencies": {
     "openai": "^4.8.0",
     "p-queue": "^7.4.1",
     "dotenv": "^16.3.1"
-  }
+  },
+  "keywords":[
+    "openai",
+    "chatbot",
+    "gpt3",
+    "gpt-3.5-turbo",
+    "gpt3.5",
+    "gpt4",
+    "api",
+    "batch",
+    "parallel",
+    "queue"
+  ]
 }
