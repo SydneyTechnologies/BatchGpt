@@ -346,7 +346,7 @@ async function main() {
   try {
     // Perform parallel tasks with dynamic retryDelay
     await chatGpt.parallel({
-      messageObjList: translationTasks.map((task) => {
+      messageList: translationTasks.map((task) => {
         return {
           prompt: `Translate '${task.text}' to ${task.language}. Your response should be in the following valid JSON structure: { "word": ".." , "fromLanguage": ".." , translation: "..", toLanguage: ".."}`,
         };
@@ -355,6 +355,7 @@ async function main() {
       retryCount: 3, // Retry each task 3 times on failure
       retryDelay: (value) => value * 1000, // Retry delay in milliseconds
       onResponse: (result) => {
+        // return the response
         console.log("result\n", result[1]);
       },
     });
