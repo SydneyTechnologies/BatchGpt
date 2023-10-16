@@ -2,7 +2,6 @@
 
 // Imports
 import PQueue from "p-queue";
-
 // UTILITY FUNCTIONS
 /**
  *  delay function, delays the execution of the next function call by the specified time
@@ -65,6 +64,8 @@ class BatchGpt {
    *  @param {number} timeout Max time a request can take before, it is rejected Default is 5 minutes (300,000 milliseconds), set to null if you do not wish to timeout.
    *  @param {number} concurrency For parallel requests, how many operations should run at a time, default is 1
    *  @param {boolean} verbose If true, will log all requests and responses to the console. Default is false
+   *  @param {boolean} enableModeration If true, will enable moderation for the api. Default is false
+   *  @param {number} moderationThreshold This is the threshold for the moderation api. Default is 0.2
    */
   constructor({
     openai,
@@ -75,15 +76,19 @@ class BatchGpt {
     concurrency = 1,
     timeout = 5 * 60 * 1000,
     verbose = false,
+    enableModeration = false,
+    moderationThreshold = 0.2,
   }) {
-    this.openai = openai;
     this.model = model;
-    this.temperature = temperature;
+    this.openai = openai;
+    this.timeout = timeout;
+    this.verbose = verbose;
     this.retryCount = retryCount;
     this.retryDelay = retryDelay;
     this.concurrency = concurrency;
-    this.timeout = timeout;
-    this.verbose = verbose;
+    this.temperature = temperature;
+    this.enableModeration = enableModeration;
+    this.moderationThreshold = moderationThreshold;
   }
 
   /**
@@ -108,6 +113,23 @@ class BatchGpt {
     const token = response.usage.completion_tokens;
     return parseInt(token);
   };
+
+  async ModerationApi(input) {
+    const moderation = await this.openai.moderations.create({ input });
+    const moderationResult = moderation.results[0];
+
+    const flaggedCategories = Object.keys(moderationResult.categories).filter(
+      (category) =>
+        Number(moderationResult.category_scores[category]) >=
+        this.moderationThreshold
+    );
+    const safeInput = {
+      flagged: moderationResult.flagged,
+      categories: flaggedCategories,
+    };
+
+    return [safeInput, moderationResult];
+  }
 
   /**
    *  Sends a request to the chatgpt api (using either function calling or regular gpt prompting) specifying the function signature means use functiona calling, otherwise the function uses regular gpt prompting
@@ -143,6 +165,24 @@ class BatchGpt {
     const log = logger.log.bind(logger);
     // Instantiate a queue object
     const queue = new PQueue({ timeout, throwOnTimeout: true });
+    let moderation,
+      safeInput,
+      moderationResult = null;
+
+    if (this.enableModeration) {
+      moderation = await this.ModerationApi(messages[0].content);
+      safeInput = moderation[0];
+      moderationResult = moderation[1];
+      // log("Moderation Result", moderationResult);
+    }
+
+    if (safeInput?.flagged || safeInput?.categories.length > 0) {
+      const moderationError = `ERROR: Prompt was flagged for ${safeInput.categories.join(
+        ", "
+      )}`;
+      log(moderationError);
+      return [moderationError, null, null];
+    }
 
     // while loop for retrying requests
     while (retryAttempt < retryCount) {

@@ -4,19 +4,24 @@ import dotenv from "dotenv";
 
 // setup
 dotenv.config();
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
-const batchGpt = new BatchGpt({ openai, retryCount: 2 });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const batchGpt = new BatchGpt({
+  openai,
+  retryCount: 2,
+  enableModeration: true,
+  moderationThreshold: 0.0001,
+});
 
 // prompt
 const messages = [
   {
     role: "user",
-    content: "What is my name?",
+    content: "Is self defense manslaughter?",
   },
 ];
 const [err, response, statusHistory] = await batchGpt.request({
   messages,
-  ensureJson: true,
+  ensureJson: false,
   verbose: true,
 });
 

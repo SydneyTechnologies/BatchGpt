@@ -41,16 +41,16 @@ The starting point is the BatchGpt class, to utilize most of the features of thi
 
 Below is a list of all the parameters that can be set in the constructor of the BatchGpt class. The only required parameter that needs to be set is the openai object.
 
-| Parameters  | Default         | Description                                                                                                             | Required |
-| ----------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- | -------- |
-| openai      |                 | Openai object to interface with the api                                                                                 | Yes      |
-| model       | "gpt-3.5-turbo" | This is the model that will be initialized for the api                                                                  | No       |
-| temperature | 1               | This temperature set for the model read more in the openai documentation.                                               | No       |
-| retryCount  | 0               | Number of retries per request.                                                                                          | No       |
-| retryDelay  | null            | How long to wait before retrying a request. It could be a function `(retryCount)=>{ retryCount + 500 }`. (Milliseconds) | No       |
-| timemout    | 5 \* 60 \* 1000 | Max time a request can take before, it is rejected                                                                      | No       |
-| concurrency | 1               | For parallel requests, how many operations should run at a time                                                         | No       |
-| verbose     | false           | If true, will log all requests and responses to the console.                                                            | No       |
+| Parameters  | Default         | Description                                                                                                                                                               | Required |
+| ----------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| openai      |                 | Openai object to interface with the api                                                                                                                                   | Yes      |
+| model       | "gpt-3.5-turbo" | This is the model that will be initialized for the api                                                                                                                    | No       |
+| temperature | 1               | This temperature set for the large language model. If you wish to read more, visit the [openai documentation](https://platform.openai.com/docs/api-reference/chat/create) | No       |
+| retryCount  | 0               | Number of retries per request.                                                                                                                                            | No       |
+| retryDelay  | null            | How long to wait before retrying a request. It could be a function `(retryCount)=>{ retryCount + 500 }`. (Milliseconds)                                                   | No       |
+| timeout     | 5 \* 60 \* 1000 | Max time a request can take before, it is rejected                                                                                                                        | No       |
+| concurrency | 1               | For parallel requests, how many operations should run at a time                                                                                                           | No       |
+| verbose     | false           | If true, will log all requests and responses to the console.                                                                                                              | No       |
 
 ### Simple example
 
@@ -58,7 +58,10 @@ Below is a list of all the parameters that can be set in the constructor of the 
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({ openai });
 ```
 
@@ -68,7 +71,10 @@ const batchGpt = new BatchGpt({ openai });
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({
   openai,
   temperature: 1.2,
@@ -163,6 +169,10 @@ The function returns an array of objects in the same positional order as shown b
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({ openai });
 const messages = [
   {
@@ -180,7 +190,10 @@ const [err, response] = await chatGpt.request({ messages });
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({ openai });
 
 const functionSignature = {
@@ -310,7 +323,10 @@ The function returns an array of objects in the same positional order as shown b
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({ openai });
 
 // Sending parallel requests using the Parallel method
@@ -332,7 +348,10 @@ await chatGpt.parallel({
 import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.API_KEY });
+const openai = new OpenAI({
+  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+});
+
 const batchGpt = new BatchGpt({ openai, verbose: false, timeout: 8000 });
 
 // List of translation tasks to be processed in parallel
