@@ -37,23 +37,63 @@ const fromJsonToObject = (jsonString) => {
     throw new Error("Input string is an Invalid JSON string");
   }
 };
+
+export const verboseType = {
+  NONE: "NONE", // log nothing
+  INFO: "INFO", // log everything except warnings and errors
+  DEBUG: "DEBUG", // log all steps including warnings and errors
+};
+
 class Logger {
   // set up helper functions
   /**
    *  logger, helps log information to the console based on the verbose setting
-   *  @param {boolean} verbose setting for logging to the console
+   *  @param {typeof "NONE" || "INFO" || "DEBUG"} verbose setting for logging to the console
    */
-  constructor({ verbose = true }) {
+
+  ERROR = "\x1b[31m";
+  WARN = "\x1b[33m";
+  INFO = "\x1b[0m";
+
+  constructor({ verbose = verboseType.NONE }) {
     this.verbose = verbose;
   }
 
+  getDate() {
+    const currentDateTime = new Date();
+    const month = currentDateTime.getMonth() + 1;
+    const day = currentDateTime.getDate();
+    const year = currentDateTime.getFullYear();
+    const hours = currentDateTime.getHours();
+    const minutes = currentDateTime.getMinutes();
+    const seconds = currentDateTime.getSeconds();
+
+    const formatedDate = `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+    return formatedDate;
+  }
+
   log(...args) {
-    if (this.verbose) {
-      console.log(...args);
+    if (
+      this.verbose === verboseType.INFO ||
+      this.verbose === verboseType.DEBUG
+    ) {
+      console.log(`${this.INFO}[${this.getDate()}] INFO:`, ...args);
+    }
+  }
+
+  error(...args) {
+    if (this.verbose === verboseType.DEBUG) {
+      console.log(`${this.ERROR}[${this.getDate()}] ERROR:`, ...args);
+    }
+  }
+
+  warn(...args) {
+    if (this.verbose === verboseType.DEBUG) {
+      console.log(`${this.WARN}[${this.getDate()}] WARN:`, ...args);
     }
   }
 }
-class BatchGpt {
+export class BatchGpt {
   /**
    *  ChatGpt class constructor. This class is used to interface with the chatgpt api, and setup default values for the api
    *  @param  openai Openai object to interface with the api
@@ -63,9 +103,9 @@ class BatchGpt {
    *  @param {number || function(): number} retryDelay How long to wait before retrying a request. Default is 0 (value in milliseconds). It could also be a function that returns a number
    *  @param {number} timeout Max time a request can take before, it is rejected Default is 5 minutes (300,000 milliseconds), set to null if you do not wish to timeout.
    *  @param {number} concurrency For parallel requests, how many operations should run at a time, default is 1
-   *  @param {boolean} verbose If true, will log all requests and responses to the console. Default is false
-   *  @param {boolean} enableModeration If true, will enable moderation for the api. Default is false
-   *  @param {number} moderationThreshold This is the threshold for the moderation api. Default is 0.2
+   *  @param {"NONE" || "INFO" || "DEBUG"} verbose Controls the level of logging. Default is NONE
+   *  @param {boolean} moderationEnable If true, will enable moderation for the api. Default is false
+   *  @param {number} moderationThreshold This is the threshold for the moderation api. Default is null
    */
   constructor({
     openai,
@@ -76,8 +116,8 @@ class BatchGpt {
     concurrency = 1,
     timeout = 5 * 60 * 1000,
     verbose = false,
-    enableModeration = false,
-    moderationThreshold = 0.2,
+    moderationEnable = false,
+    moderationThreshold = null,
   }) {
     this.model = model;
     this.openai = openai;
@@ -87,7 +127,7 @@ class BatchGpt {
     this.retryDelay = retryDelay;
     this.concurrency = concurrency;
     this.temperature = temperature;
-    this.enableModeration = enableModeration;
+    this.moderationEnable = moderationEnable;
     this.moderationThreshold = moderationThreshold;
   }
 
@@ -114,7 +154,12 @@ class BatchGpt {
     return parseInt(token);
   };
 
-  async ModerationApi(input) {
+  /**
+   * ModerationApi function, sends a request to the moderation api to perform sentiment analysis on the input
+   * @param {string} input
+   * @returns {Array<Object>} returns an array of two objects, the first object is the safe input, the second object is the moderation result
+   */
+  async moderationApi(input) {
     const moderation = await this.openai.moderations.create({ input });
     const moderationResult = moderation.results[0];
 
@@ -131,16 +176,116 @@ class BatchGpt {
     return [safeInput, moderationResult];
   }
 
+  validateRequestParameters({
+    messages,
+    minTokens,
+    functions,
+    ensureJson,
+    minResponseTime,
+    timeout,
+    verbose,
+    retryCount,
+    retryDelay,
+  }) {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      throw new Error(
+        "Invalid 'messages' parameter. It should be a non-empty array."
+      );
+    }
+
+    if (minTokens !== null && typeof minTokens !== "number") {
+      throw new Error(
+        "Invalid 'minTokens' parameter. It should be a number or null."
+      );
+    }
+
+    if (functions !== null && !Array.isArray(functions)) {
+      throw new Error(
+        "Invalid 'functions' parameter. It should be an array of objects."
+      );
+    }
+
+    if (functions) {
+      for (const funcObj of functions) {
+        if (
+          !funcObj ||
+          typeof funcObj !== "object" ||
+          !funcObj.functionSignature ||
+          typeof funcObj.function !== "function"
+        ) {
+          throw new Error(
+            "Invalid 'functions' parameter. Each object in the array should have 'functionSignature' and 'function' fields."
+          );
+        }
+      }
+    }
+
+    if (typeof ensureJson !== "boolean") {
+      throw new Error(
+        "Invalid 'ensureJson' parameter. It should be a boolean value."
+      );
+    }
+
+    if (minResponseTime !== null && typeof minResponseTime !== "number") {
+      throw new Error(
+        "Invalid 'minResponseTime' parameter. It should be a number or null."
+      );
+    }
+
+    if (timeout !== null && (typeof timeout !== "number" || timeout <= 0)) {
+      throw new Error(
+        "Invalid 'timeout' parameter. It should be a number greater than zero or null."
+      );
+    }
+
+    if (verbose !== "NONE" && verbose !== "INFO" && verbose !== "DEBUG") {
+      throw new Error(
+        "Invalid 'verbose' parameter. It should be one of 'NONE', 'INFO', or 'DEBUG'."
+      );
+    }
+
+    if (
+      retryCount !== null &&
+      (typeof retryCount !== "number" || retryCount < 0)
+    ) {
+      throw new Error(
+        "Invalid 'retryCount' parameter. It should be a non-negative number or null."
+      );
+    }
+
+    if (
+      retryDelay !== null &&
+      typeof retryDelay !== "number" &&
+      typeof retryDelay !== "function"
+    ) {
+      throw new Error(
+        "Invalid 'retryDelay' parameter. It should be a number, null, or a function."
+      );
+    }
+
+    // If retryDelay is a function, validate its signature
+    if (typeof retryDelay === "function" && retryDelay.length !== 1) {
+      throw new Error(
+        "Invalid 'retryDelay' function signature. It should take one parameter (current value of retryCount)."
+      );
+    }
+
+    // Validate other parameters as needed...
+
+    // If all checks pass, return true
+    return true;
+  }
+
   /**
    *  Sends a request to the chatgpt api (using either function calling or regular gpt prompting) specifying the function signature means use functiona calling, otherwise the function uses regular gpt prompting
    *  @param {[{role: string, content: string}]} messages This is a list of prompt messages to send to the api
    *  @param {number} retryCount This is the number of retries for the request. Default is what is set in the constructor for the class. If not set it is 0
    *  @param {[Object]} functions This defines list of function signatures for gpt function calling approach.
    *  @param @param {number || function(): number} retryDelay This is the delay between retries for the request. Default is what is set in the constructor for the class. Default is 0
-   *  @param {boolean} verbose This is the verbose setting for the request. Default is what is set in the constructor for the class. If not set it is false
+   *  @param {"NONE" || "INFO" || "DEBUG"} verbose This is the verbose setting for the request. Default is what is set in the constructor for the class. If not it is set to NONE
    *  @param {number} minResponseTime This sets a minimum time a response should take for it to be regarded as a valid response. Default is 3000ms
    *  @param {number} minTokens This sets a minimum number of tokens a response should have for it to be regarded as a valid response. Default is 10
-   *  @param {number} timeout Max time a request can take before, it is rejected Default is 15000ms (value in milliseconds), set to null if you do not wish to timeout.
+   *  @param {number} timeout Default is 5 minutes (300,000 milliseconds), set to null if you do not wish to timeout.
    *  @param {boolean} ensureJson This ensures that the response is valid JSON. Default is true
    *  @returns {Array} [error, response, statusHistory]. error tells us if the response failed or not (it contains an error message, which states what went wrong). response is an object containing the response from the api. statusHistory is an array of objects containing the status of each attempted request and the result of the request
    */
@@ -162,37 +307,83 @@ class BatchGpt {
 
     // instantiate logger
     const logger = new Logger({ verbose });
-    const log = logger.log.bind(logger);
+
+    const logInfo = logger.log.bind(logger);
+    const logWarn = logger.warn.bind(logger);
+    const logError = logger.error.bind(logger);
+
+    // analyze set parameters
+    this.validateRequestParameters({
+      messages,
+      minTokens,
+      functions,
+      ensureJson,
+      minResponseTime,
+      timeout,
+      verbose,
+      retryCount,
+      retryDelay,
+    });
+
+    // warn for conflicting parameters
+    if (ensureJson) {
+      logWarn(
+        "ensureJson set to true, on regular gpt prompting may result in an Invalid JSON error. Ensure that your prompt tells ChatGPT to return a valid JSON response"
+      );
+    }
+
+    if (this.moderationEnable && !this.moderationThreshold) {
+      logWarn("Moderation is enabled, moderationThreshold should also be set");
+    }
+
+    if (this.moderationThreshold && !this.moderationEnable) {
+      logWarn(
+        "Moderation threshold set but moderation is not enabled, moderation threshold will be ignored"
+      );
+    }
+
+    if (ensureJson && functions) {
+      logWarn(
+        "ensureJson will nullify function calling and will cause only the parameters defined in the function call signature to be returned"
+      );
+    }
     // Instantiate a queue object
     const queue = new PQueue({ timeout, throwOnTimeout: true });
     let moderation,
       safeInput,
       moderationResult = null;
 
-    if (this.enableModeration) {
-      moderation = await this.ModerationApi(messages[0].content);
+    if (this.moderationEnable) {
+      logInfo("Enable moderation: true");
+      logInfo("Moderation threshold: ", this.moderationThreshold);
+      logInfo("Analyzing user prompt...");
+
+      moderation = await this.moderationApi(messages[0].content);
       safeInput = moderation[0];
       moderationResult = moderation[1];
-      // log("Moderation Result", moderationResult);
+      logInfo(`Moderation result recieved\n`, moderationResult);
     }
 
     if (safeInput?.flagged || safeInput?.categories.length > 0) {
-      const moderationError = `ERROR: Prompt was flagged for ${safeInput.categories.join(
+      const moderationError = `Prompt was flagged for ${safeInput.categories.join(
         ", "
       )}`;
-      log(moderationError);
+      logError(moderationError);
       return [moderationError, null, null];
     }
 
     // while loop for retrying requests
     while (retryAttempt < retryCount) {
       let start, end;
+      let responseContent = null;
       retryAttempt++;
       error = null;
 
       try {
         // Log request
-        log("Sending request to chatgpt api");
+        logInfo(
+          `Sending request to chatgpt api [attempt: ${retryAttempt + 1}]`
+        );
         // Start timer
         start = Date.now();
 
@@ -217,9 +408,8 @@ class BatchGpt {
         if (response === undefined) throw new Error("Request timed out");
 
         // get response content from the api
-        const responseContent = response.choices[0].message;
-        log("RESPONSE RECEIVED");
-        log(responseContent);
+        responseContent = response.choices[0].message;
+        // logInfo("RESPONSE RECEIVED:", responseContent);
 
         // function calling can be used in two ways, the first way is (to get a forced JSON response from chatGPT)
         // the next way is to allow chat gpt to call an external function
@@ -228,7 +418,9 @@ class BatchGpt {
         if (functions) {
           // if call is invoked as a function call
           if (!responseContent.function_call) {
-            log("Not a function call");
+            logError(
+              "Input Indicates function call but GPT did not return one"
+            );
             throw new Error("Not a function call");
           }
 
@@ -236,14 +428,12 @@ class BatchGpt {
           const functionCallName = responseContent.function_call.name;
           const functionMap = this.generateFunctionMap(functions);
 
-          log("function map", functionMap);
-
           // Check if response is empty or valid JSON
           fnCallArguments = fromJsonToObject(
             responseContent.function_call.arguments
           );
           if (Object.keys(fnCallArguments).length === 0) {
-            log("Empty response");
+            // logError("Recieved Empty response from function call arguments");
             throw new Error("Empty response");
           }
 
@@ -256,9 +446,10 @@ class BatchGpt {
           // if call is invoked as a regular gpt prompt
           // Check if response is empty or valid JSON
           if (ensureJson && !isJson(responseContent.content)) {
-            log("Invalid JSON response");
-            log("Empty response");
-            throw new Error("Empty response");
+            // logError(
+            //   "ensureJson set to True but Invalid JSON response recieved. Check your prompt"
+            // );
+            throw new Error("Invalid JSON response");
           }
         }
 
@@ -285,23 +476,31 @@ class BatchGpt {
           time_per_token: Math.round(responseTime / tokens),
         };
         statusHistory.push({
+          moderation: moderationResult,
           status: "success",
           response: gptResponse,
           responseTime,
           tokens,
         });
 
-        log(`Received response in ${end - start} milliseconds`);
+        logInfo(`Received response in ${end - start} milliseconds`);
 
         break;
       } catch (e) {
         // call on error function if set
 
-        log("ERROR", e.message);
+        // even though the response failed we can still set it to the response content
+        gptResponse = {
+          content: responseContent.content,
+          time_per_token: null,
+        };
+
+        logError(e.message);
         end = Date.now();
         // if any one of the try block fails, log the status history and retry the request
         error = e.message;
         statusHistory.push({
+          moderation: moderationResult,
           status: "failure",
           response: error,
           responseTime: end - start,
@@ -310,17 +509,23 @@ class BatchGpt {
         // if retryDelay is set, wait for the specified time before retrying the request
         if (typeof retryDelay !== "function") {
           if (retryDelay > 0 && retryAttempt < retryCount) {
-            log(`Waiting for ${retryDelay} milliseconds before retrying`);
+            logInfo(`Waiting for ${retryDelay} milliseconds before retrying`);
             await delay(retryDelay);
           }
         } else if (retryAttempt < retryCount) {
           const retryDelayValue = retryDelay(retryAttempt);
-          log(`Waiting for ${retryDelayValue} milliseconds before retrying`);
+          logInfo(
+            `Waiting for ${retryDelayValue} milliseconds before retrying`
+          );
           await delay(retryDelayValue);
         }
       }
     }
 
+    logInfo("Request completed");
+    logInfo("Error:", error);
+    logInfo("Response:", gptResponse);
+    logInfo("Status History:", statusHistory);
     return [error, gptResponse, statusHistory];
   }
 

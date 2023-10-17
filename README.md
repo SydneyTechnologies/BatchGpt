@@ -22,35 +22,37 @@ const messages = [
       "Generate a script for a social media video showcasing our company culture",
   },
 ];
-const [err, response] = await chatGpt.request({ messages, ensureJson: false });
+const [err, response] = await batchGpt.request({ messages });
 
-//use response
+// use response
 if (!err) {
   // Do something with response
   console.log(response);
 }
 ```
 
-For more advanced usage of the library for things like, concurrent requests, request timeouts, onResponse callbacks and function calling prompting then below is shows how to setup the gptClass for your needs.
+For more advanced usage of the library for things like, concurrent requests, request timeouts, onResponse callbacks and function calling then the documentation below shows how to setup the BatchGpt class for your needs.
 
 # BatchGpt Class
 
-The starting point is the BatchGpt class, to utilize most of the features of this library we have to go through the parameters for constructing a BatchGpt class instance. Below is a list of all the parameters that can be set for the class, there is however only one required parameter which is the openai object.
+The starting point is the BatchGpt class, to utilize most of the features of this library we have to go through the parameters for constructing a BatchGpt class instance.
 
 ### Parameters
 
 Below is a list of all the parameters that can be set in the constructor of the BatchGpt class. The only required parameter that needs to be set is the openai object.
 
-| Parameters  | Default         | Description                                                                                                                                                               | Required |
-| ----------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| openai      |                 | Openai object to interface with the api                                                                                                                                   | Yes      |
-| model       | "gpt-3.5-turbo" | This is the model that will be initialized for the api                                                                                                                    | No       |
-| temperature | 1               | This temperature set for the large language model. If you wish to read more, visit the [openai documentation](https://platform.openai.com/docs/api-reference/chat/create) | No       |
-| retryCount  | 0               | Number of retries per request.                                                                                                                                            | No       |
-| retryDelay  | null            | How long to wait before retrying a request. It could be a function `(retryCount)=>{ retryCount + 500 }`. (Milliseconds)                                                   | No       |
-| timeout     | 5 \* 60 \* 1000 | Max time a request can take before, it is rejected                                                                                                                        | No       |
-| concurrency | 1               | For parallel requests, how many operations should run at a time                                                                                                           | No       |
-| verbose     | false           | If true, will log all requests and responses to the console.                                                                                                              | No       |
+| Parameters          | Default         | Description                                                                                                                                                                                                                                                                                                                                                                               | Required |
+| ------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| openai              |                 | OpenAI object to interface with the api.                                                                                                                                                                                                                                                                                                                                                  | Yes      |
+| model               | "gpt-3.5-turbo" | This is the model that will be initialized for the api.                                                                                                                                                                                                                                                                                                                                   | No       |
+| temperature         | 1               | This temperature set for the large language model. If you wish to read more, visit the [OpenAI documentation](https://platform.openai.com/docs/api-reference/chat/create).                                                                                                                                                                                                                | No       |
+| retryCount          | 0               | Number of retries per request.                                                                                                                                                                                                                                                                                                                                                            | No       |
+| retryDelay          | null            | How many milliseconds to wait before retrying a request, alternatively it could be a function `(retryCount)=>{ retryCount + 500 }`.                                                                                                                                                                                                                                                       | No       |
+| timeout             | 5 \* 60 \* 1000 | Maximum time in milliseconds a request can take before it is rejected.                                                                                                                                                                                                                                                                                                                    | No       |
+| moderationEnable    | false           | Setting this value to true enables a sentimental analysis using OpenAI's [Moderation API](https://platform.openai.com/docs/guides/moderation/overview) on the provided prompt. If the prompt is flagged or is within the specified criteria as per the moderationThreshold, then the request is rejected. This parameter should be used in hand with the `moderationThreshold` parameter. | No       |
+| moderationThreshold | null            | Sets the threshold value required to flag a prompt. The moderationThreshold is compared against the category scores returned from OpenAI's [Moderation API](https://platform.openai.com/docs/guides/moderation/overview).                                                                                                                                                                 | No       |
+| concurrency         | 1               | For parallel requests, how many operations should run at a time.                                                                                                                                                                                                                                                                                                                          | No       |
+| verbose             | false           | If true, will log all requests and responses to the console.                                                                                                                                                                                                                                                                                                                              | No       |
 
 ### Simple example
 
@@ -59,7 +61,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({ openai });
@@ -72,7 +74,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({
@@ -83,19 +85,21 @@ const batchGpt = new BatchGpt({
   timeout: 20 * 1000,
   concurrency: 2,
   verbose: true,
+  moderationEnable: true,
 });
 
-// the chatGpt object is set to run two requests in parallel. If any of the requests fail initially it will attempt to retry the
-// request at most two times, however the request must resolve under 20 seconds if not they fail. Retry delay is set to a value that is dependent on the current try number of the request
+// the batchGpt object is set to run two requests in parallel. If any of the requests fail it will attempt to retry the
+// request at most two times, however the request must resolve under 20 seconds if not, the request is rejected. Retry delay is set to a value that is dependent on the current attempt number of the request.
+// Request made using the class object will be subject to a pre-check of the prompt through the OpenAI's Moderation API
 ```
 
-## `request` method
+## `request` function
 
-The `request` method that actually sends a request to the openai api for chatgpt. The function is capable of using both function calling syntax and regular prompting.
+The `request` function that actually sends a request to the OpenAI api for chatgpt. The function is capable of using both function calling syntax and regular prompting.
 
 ### Parameters
 
-Below is a list of all the parameters that can be set for the request function. Note that setting things that already setup in the constructor for the class will lead to an override for this specific request.
+Below is a list of all the parameters that can be set for the `request` function. Note that setting things that are already setup in the constructor for the class will lead to an override for this specific request.
 
 | Parameters      | Default         | Description                                                                                                                                        | Required |
 | --------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -111,7 +115,7 @@ Below is a list of all the parameters that can be set for the request function. 
 
 ### ensureJson parameter
 
-This forces the GPT model to produce a JSON response, this however may cause request to fail. It should only be used in two cases
+This forces the GPT model to produce a JSON response, this however may cause the request to fail (ChatGPT may be unable to provide a JSON response). It should only be used in two cases
 
 1. When you wish to get the parameters generated by chatgpt as specified in the function signature of a function call
 2. If you have specifically included in your prompt for chatgpt to provide a response as a valid JSON
@@ -126,7 +130,7 @@ The function returns an array of objects in the same positional order as shown b
 | ------------- | -------------------- | --------------------------------------------------------------- |
 | error         | `<string>` or `null` | This is a list of prompt messages to send to the api            |
 | response      | `<object>`           | This is the response gotten from the GPT api                    |
-| statusHistory | `Array<object>`      | Array of the results of all the retries for a specific request. |
+| statusHistory | `Array<object>`      | Array of the results of all the attempts for a specific request |
 
 ### return example
 
@@ -148,6 +152,7 @@ The function returns an array of objects in the same positional order as shown b
   //STATUS HISTORY
   statusHistory: [
     {
+      moderation: null,
       status: "success",
       response: {
         content:
@@ -170,7 +175,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({ openai });
@@ -181,7 +186,7 @@ const messages = [
       "Generate a script for a social media video showcasing our company culture",
   },
 ];
-const [err, response] = await chatGpt.request({ messages });
+const [err, response] = await batchGpt.request({ messages });
 ```
 
 ### Advanced example
@@ -191,7 +196,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({ openai });
@@ -212,7 +217,7 @@ const functionSignature = {
   },
 };
 
-const [error, response, statusHistory] = await chatGpt.request({
+const [error, response, statusHistory] = await batchGpt.request({
   messages: [
     {
       role: "user",
@@ -324,7 +329,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({ openai });
@@ -336,7 +341,7 @@ const messageObjList = [
   { prompt: "Translate 'dog' to German." }, // the highest priority is executed first
 ];
 
-await chatGpt.parallel({
+await batchGpt.parallel({
   messageObjList,
   concurrency: 3,
 });
@@ -349,7 +354,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key", // defaults to process.env["OPENAI_API_KEY"]
+  apiKey: "my api key",
 });
 
 const batchGpt = new BatchGpt({ openai, verbose: false, timeout: 8000 });
@@ -364,7 +369,7 @@ const translationTasks = [
 async function main() {
   try {
     // Perform parallel tasks with dynamic retryDelay
-    await chatGpt.parallel({
+    await batchGpt.parallel({
       messageList: translationTasks.map((task) => {
         return {
           prompt: `Translate '${task.text}' to ${task.language}. Your response should be in the following valid JSON structure: { "word": ".." , "fromLanguage": ".." , translation: "..", toLanguage: ".."}`,

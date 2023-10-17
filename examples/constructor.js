@@ -1,4 +1,5 @@
-import BatchGpt from "batch-gpt";
+// import BatchGpt from "batch-gpt";
+import { BatchGpt, verboseType } from "../BatchGpt.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
@@ -8,21 +9,20 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const batchGpt = new BatchGpt({
   openai,
   retryCount: 2,
-  enableModeration: true,
-  moderationThreshold: 0.0001,
 });
 
 // prompt
 const messages = [
   {
     role: "user",
-    content: "Is self defense manslaughter?",
+    content: "Tell me a joke",
   },
 ];
+
 const [err, response, statusHistory] = await batchGpt.request({
   messages,
-  ensureJson: false,
-  verbose: true,
+  ensureJson: true,
+  verbose: verboseType.NONE,
 });
 
 //use response
