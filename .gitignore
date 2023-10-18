@@ -1,4 +1,4 @@
 /node_modules
 .env
 check.js
-concurrent.js
+.eslintrc.json

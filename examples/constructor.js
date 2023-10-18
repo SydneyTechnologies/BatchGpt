@@ -19,7 +19,7 @@ const messages = [
   },
 ];
 
-const [err, response, statusHistory] = await batchGpt.request({
+const [err, response] = await batchGpt.request({
   messages,
   ensureJson: true,
   verbose: verboseType.NONE,
@@ -27,5 +27,5 @@ const [err, response, statusHistory] = await batchGpt.request({
 
 //use response
 if (!err) {
-  console.log(err, response, statusHistory);
+  console.log(response.content);
 }
