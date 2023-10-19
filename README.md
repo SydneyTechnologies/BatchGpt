@@ -7,12 +7,12 @@ The `BatchGpt` class is a JavaScript class designed to facilitate interactions w
 If you would like a quick example of how to make use of this library then the example below should be a great start. For more examples visit the [examples](https://github.com/SydneyTechnologies/GptLibrary/blob/master/examples) folder on the respository.
 
 ```js
-import { BatchGpt, verboseType } from "batch-gpt";
+import { BatchGpt } from "batch-gpt";
 import OpenAI from "openai";
 
 // setup
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const batchGpt = new BatchGpt({ openai, verbose: verboseType.NONE });
+const batchGpt = new BatchGpt({ openai });
 
 // prompt
 const messages = [{ role: "user", content: "Tell me a joke" }];
@@ -61,7 +61,7 @@ import BatchGpt from "batch-gpt";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: "my api key",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const batchGpt = new BatchGpt({ openai });
@@ -75,7 +75,7 @@ import OpenAI from "openai";
 
 // Initialize OpenAI API client with your API key
 const openai = new OpenAI({
-  apiKey: "your-api-key",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Create a BatchGpt instance with custom configuration
@@ -175,7 +175,7 @@ const [error, response, statusHistory] = await batchGpt.request({
   messages: [{ role: "user", content: `What is the weather in Albuquerque?` }],
   functions,
   verbose: true,
-  ensureJson: true,
+  validateJson: true,
 });
 
 console.log(error, response, statusHistory);
