@@ -1,4 +1,6 @@
-import BatchGpt from "batch-gpt";
+// import BatchGpt from "batch-gpt";
+import { BatchGpt, verboseType } from "../BatchGpt.js";
+
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
@@ -28,7 +30,7 @@ const functionSignature = {
     messages: [
       {
         role: "user",
-        content: "What is the weather in Albuquerque?",
+        content: "What is the weather in New Jersey?",
       },
     ],
     functions: [
@@ -49,7 +51,7 @@ const functionSignature = {
     timeout: 2 * 60 * 1000,
     minTokens: 10,
     retryDelay: (count) => count,
-    verbose: true,
+    verbose: verboseType.INFO,
   });
 
   console.log(error, response, statusHistory);

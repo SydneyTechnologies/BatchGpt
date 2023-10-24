@@ -93,7 +93,7 @@ export class BatchGpt {
     const flaggedCategories = Object.keys(moderationResult.categories).filter(
       (category) =>
         Number(moderationResult.category_scores[category]) >=
-        this.moderationThreshold,
+        this.moderationThreshold
     );
     const safeInput = {
       flagged: moderationResult.flagged,
@@ -116,19 +116,19 @@ export class BatchGpt {
   }) {
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       throw new Error(
-        "Invalid 'messages' parameter. It should be a non-empty array.",
+        "Invalid 'messages' parameter. It should be a non-empty array."
       );
     }
 
     if (minTokens !== null && typeof minTokens !== "number") {
       throw new Error(
-        "Invalid 'minTokens' parameter. It should be a number or null.",
+        "Invalid 'minTokens' parameter. It should be a number or null."
       );
     }
 
     if (functions !== null && !Array.isArray(functions)) {
       throw new Error(
-        "Invalid 'functions' parameter. It should be an array of objects.",
+        "Invalid 'functions' parameter. It should be an array of objects."
       );
     }
 
@@ -138,10 +138,10 @@ export class BatchGpt {
           !funcObj ||
           typeof funcObj !== "object" ||
           !funcObj.functionSignature ||
-          typeof funcObj.function !== "function"
+          typeof funcObj.callback !== "function"
         ) {
           throw new Error(
-            "Invalid 'functions' parameter. Each object in the array should have 'functionSignature' and 'function' fields.",
+            "Invalid 'functions' parameter. Each object in the array should have 'functionSignature' and 'callback' fields."
           );
         }
       }
@@ -149,25 +149,25 @@ export class BatchGpt {
 
     if (typeof validateJson !== "boolean") {
       throw new Error(
-        "Invalid 'validateJson' parameter. It should be a boolean value.",
+        "Invalid 'validateJson' parameter. It should be a boolean value."
       );
     }
 
     if (minResponseTime !== null && typeof minResponseTime !== "number") {
       throw new Error(
-        "Invalid 'minResponseTime' parameter. It should be a number or null.",
+        "Invalid 'minResponseTime' parameter. It should be a number or null."
       );
     }
 
     if (timeout !== null && (typeof timeout !== "number" || timeout <= 0)) {
       throw new Error(
-        "Invalid 'timeout' parameter. It should be a number greater than zero or null.",
+        "Invalid 'timeout' parameter. It should be a number greater than zero or null."
       );
     }
 
     if (verbose !== "NONE" && verbose !== "INFO" && verbose !== "DEBUG") {
       throw new Error(
-        "Invalid 'verbose' parameter. It should be one of 'NONE', 'INFO', or 'DEBUG'.",
+        "Invalid 'verbose' parameter. It should be one of 'NONE', 'INFO', or 'DEBUG'."
       );
     }
 
@@ -176,7 +176,7 @@ export class BatchGpt {
       (typeof retryCount !== "number" || retryCount < 0)
     ) {
       throw new Error(
-        "Invalid 'retryCount' parameter. It should be a non-negative number or null.",
+        "Invalid 'retryCount' parameter. It should be a non-negative number or null."
       );
     }
 
@@ -186,14 +186,14 @@ export class BatchGpt {
       typeof retryDelay !== "function"
     ) {
       throw new Error(
-        "Invalid 'retryDelay' parameter. It should be a number, null, or a function.",
+        "Invalid 'retryDelay' parameter. It should be a number, null, or a function."
       );
     }
 
     // If retryDelay is a function, validate its signature
     if (typeof retryDelay === "function" && retryDelay.length !== 1) {
       throw new Error(
-        "Invalid 'retryDelay' function signature. It should take one parameter (current value of retryCount).",
+        "Invalid 'retryDelay' function signature. It should take one parameter (current value of retryCount)."
       );
     }
 
@@ -217,7 +217,7 @@ export class BatchGpt {
     // Validate messageList
     if (!Array.isArray(messageList) || messageList.length === 0) {
       throw new Error(
-        "messageList must be a non-empty array of message objects.",
+        "messageList must be a non-empty array of message objects."
       );
     }
 
@@ -323,7 +323,7 @@ export class BatchGpt {
     // warn for conflicting parameters
     if (validateJson) {
       logWarn(
-        "validateJson set to true, on regular gpt prompting may result in an Invalid JSON error. Ensure that your prompt tells ChatGPT to return a valid JSON response",
+        "validateJson set to true, on regular gpt prompting may result in an Invalid JSON error. Ensure that your prompt tells ChatGPT to return a valid JSON response"
       );
     }
 
@@ -333,13 +333,13 @@ export class BatchGpt {
 
     if (this.moderationThreshold && !this.moderationEnable) {
       logWarn(
-        "Moderation threshold set but moderation is not enabled, moderation threshold will be ignored",
+        "Moderation threshold set but moderation is not enabled, moderation threshold will be ignored"
       );
     }
 
     if (validateJson && functions) {
       logWarn(
-        "validateJson will nullify function calling and will cause only the parameters defined in the function call signature to be returned",
+        "validateJson will nullify function calling and will cause only the parameters defined in the function call signature to be returned"
       );
     }
     // Instantiate a queue object
@@ -358,13 +358,14 @@ export class BatchGpt {
       moderationResult = moderation[1];
       logInfo("Moderation result recieved\n", moderationResult);
     }
-
-    if (safeInput.flagged || safeInput.categories.length > 0) {
-      const moderationError = `Prompt was flagged for ${safeInput.categories.join(
-        ", ",
-      )}`;
-      logError(moderationError);
-      return [moderationError, null, null];
+    if (safeInput) {
+      if (safeInput.flagged || safeInput.categories.length > 0) {
+        const moderationError = `Prompt was flagged for ${safeInput.categories.join(
+          ", "
+        )}`;
+        logError(moderationError);
+        return [moderationError, null, null];
+      }
     }
 
     // while loop for retrying requests
@@ -378,7 +379,7 @@ export class BatchGpt {
       try {
         // Log request
         logInfo(
-          `Sending request to chatgpt api [attempt: ${retryAttempt + 1}]`,
+          `Sending request to chatgpt api [attempt: ${retryAttempt + 1}]`
         );
         // Start timer
         start = Date.now();
@@ -386,16 +387,16 @@ export class BatchGpt {
         const response = await queue.add(async () =>
           functions
             ? this.openai.chat.completions.create({
-              messages,
-              functions: functions.map((fn) => fn.functionSignature),
-              model: this.model,
-              temperature: this.temperature,
-            })
+                messages,
+                functions: functions.map((fn) => fn.functionSignature),
+                model: this.model,
+                temperature: this.temperature,
+              })
             : this.openai.chat.completions.create({
-              messages,
-              model: this.model,
-              temperature: this.temperature,
-            }),
+                messages,
+                model: this.model,
+                temperature: this.temperature,
+              })
         );
 
         end = Date.now();
@@ -414,7 +415,7 @@ export class BatchGpt {
           // if call is invoked as a function call
           if (!responseContent.function_call) {
             logError(
-              "Input Indicates function call but GPT did not return one",
+              "Input Indicates function call but GPT did not return one"
             );
             throw new Error("Not a function call");
           }
@@ -425,7 +426,7 @@ export class BatchGpt {
 
           // Check if response is empty or valid JSON
           fnCallArguments = utils.fromJsonToObject(
-            responseContent.function_call.arguments,
+            responseContent.function_call.arguments
           );
           if (Object.keys(fnCallArguments).length === 0) {
             // logError("Recieved Empty response from function call arguments");
@@ -453,7 +454,7 @@ export class BatchGpt {
         // Check if request completed in a valid response time
         if (minResponseTime && responseTime <= minResponseTime) {
           throw new Error(
-            `Response is unreliable. Response Time ${responseTime} < minResponseTime ${minResponseTime}`,
+            `Response is unreliable. Response Time ${responseTime} < minResponseTime ${minResponseTime}`
           );
         }
 
@@ -462,11 +463,12 @@ export class BatchGpt {
         // Check if response has enough tokens
         if (minTokens && tokens <= minTokens) {
           throw new Error(
-            `Response is unreliable. Tokens received ${tokens} < minTokens ${minTokens}}`,
+            `Response is unreliable. Tokens received ${tokens} < minTokens ${minTokens}}`
           );
         }
         // if all checks pass, log status history and break out of while loop
         gptResponse = {
+          moderation: moderationResult,
           content: fnResponse || fnCallArguments || responseContent.content,
           time_per_token: Math.round(responseTime / tokens),
         };
@@ -484,6 +486,7 @@ export class BatchGpt {
       } catch (e) {
         // even though the response failed we can still set it to the response content
         gptResponse = {
+          moderation: moderationResult,
           content: responseContent.content,
           time_per_token: null,
         };
@@ -493,7 +496,6 @@ export class BatchGpt {
         // if any one of the try block fails, log the status history and retry the request
         error = e.message;
         statusHistory.push({
-          moderation: moderationResult,
           status: "failure",
           response: error,
           responseTime: end - start,
@@ -508,7 +510,7 @@ export class BatchGpt {
         } else if (retryAttempt < retryCount) {
           const retryDelayValue = retryDelay(retryAttempt);
           logInfo(
-            `Waiting for ${retryDelayValue} milliseconds before retrying`,
+            `Waiting for ${retryDelayValue} milliseconds before retrying`
           );
           await utils.delay(retryDelayValue);
         }
@@ -521,7 +523,7 @@ export class BatchGpt {
       "Response:\n",
       gptResponse.content,
       "\ntime_per_token:",
-      gptResponse.time_per_token,
+      gptResponse.time_per_token
     );
     logInfo("Status History:", statusHistory);
     return [error, gptResponse, statusHistory];

@@ -2,3 +2,4 @@
 .env
 check.js
 .eslintrc.json
+.prettierignore
