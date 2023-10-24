@@ -19,13 +19,15 @@ const messages = [
   },
 ];
 
-const [err, response] = await batchGpt.request({
-  messages,
-  ensureJson: true,
-  verbose: verboseType.NONE,
-});
+(async () => {
+  const [err, response] = await batchGpt.request({
+    messages,
+    validateJson: true,
+    verbose: verboseType.NONE,
+  });
 
-//use response
-if (!err) {
-  console.log(response.content);
-}
+  // use response
+  if (!err) {
+    console.log(response.content);
+  }
+})();

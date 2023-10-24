@@ -11,13 +11,14 @@ const batchGpt = new BatchGpt({ openai });
 const messageList = [
   { prompt: "Translate 'apple' to Spanish." },
   { prompt: "Translate 'cat' to French." },
-  { prompt: "Translate 'dog' to German." }, // the highest priority is executed first
+  { prompt: "Translate 'dog' to German." },
 ];
 
-const [error, response, rawResponse] = await batchGpt.parallel({
-  messageList,
-  concurrency: 3,
-  verbose: true,
-});
-
-console.log(error, response, rawResponse);
+(async () => {
+  const [error, response, rawResponse] = await batchGpt.parallel({
+    messageList,
+    concurrency: 3,
+    verbose: true,
+  });
+  console.log(error, response, rawResponse);
+})();

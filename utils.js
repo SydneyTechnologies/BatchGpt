@@ -11,44 +11,43 @@ export const delay = async (time) => {
  *  isJson function, checks if a string is valid JSON
  *  @param {string} str potential JSON string to check
  */
-export const isJson = (str) => {
+export function isJson(str) {
   try {
     JSON.parse(str);
   } catch (e) {
     return false;
   }
   return true;
-};
+}
 
 /**
  *  fromJsonToObject function, converts a JSON string to a Javascript object
  *  @param {string} jsonString JSON string
- *  @returns {Object} returns a Javascript object
+ *  @return {Object} returns a Javascript object
  */
-export const fromJsonToObject = (jsonString) => {
+export function fromJsonToObject(jsonString) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
     throw new Error("Input string is an Invalid JSON string");
   }
-};
+}
 
 /**
  * Logger class for logging information, warnings, and errors to the console based on the specified verbosity level.
  * @param {string} verbose - Verbosity level, one of "NONE", "INFO", or "DEBUG".
  */
 export class Logger {
-  ERROR = "\x1b[31m";
-  WARN = "\x1b[33m";
-  INFO = "\x1b[0m";
-
   constructor({ verbose = "NONE" }) {
     this.verbose = verbose;
+    this.ERROR = "\x1b[31m";
+    this.WARN = "\x1b[33m";
+    this.INFO = "\x1b[0m";
   }
 
   /**
    * Gets the current date and time in a formatted string.
-   * @returns {string} Formatted date and time string.
+   * @return {string} Formatted date and time string.
    */
   getDate() {
     const currentDateTime = new Date();
