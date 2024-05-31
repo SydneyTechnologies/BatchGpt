@@ -3,11 +3,20 @@
 // Imports
 import PQueue from "p-queue";
 import * as utils from "./utils.js";
+import {
+  validateParallelParameters,
+  validateRequestParameters,
+} from "./validators.js";
 
-export const verboseType = {
+export const VerboseType = {
   NONE: "NONE", // log nothing
   INFO: "INFO", // log everything except warnings and errors
   DEBUG: "DEBUG", // log all steps including warnings and errors
+};
+
+export const CallType = {
+  IMAGE: "IMAGE",
+  REGULAR: "REGULAR",
 };
 
 export class BatchGpt {
@@ -32,13 +41,14 @@ export class BatchGpt {
     openai,
     retryCount = 0,
     retryDelay = 0,
-    verbose = false,
+    verbose = VerboseType.DEBUG,
     temperature = 1,
     concurrency = 1,
     minTokens = null,
     validateJson = false,
     minResponseTime = null,
     model = "gpt-3.5-turbo",
+    image_model = null,
     timeout = 5 * 60 * 1000,
     moderationEnable = false,
     moderationThreshold = null,
@@ -51,6 +61,7 @@ export class BatchGpt {
     this.retryCount = retryCount;
     this.retryDelay = retryDelay;
     this.concurrency = concurrency;
+    this.image_model = image_model;
     this.temperature = temperature;
     this.validateJson = validateJson;
     this.minResponseTime = minResponseTime;
@@ -59,26 +70,18 @@ export class BatchGpt {
   }
 
   /**
-   * generateFunctionMap function, generates a function map from a list of function signatures and their corresponding functions
-   * @param {[{functionSignature: Object, callback: function}]} functions This is a list of function signatures and their corresponding functions
-   * @return {Object} returns a function map
-   */
-  generateFunctionMap(functions) {
-    const functionMap = {};
-    functions.forEach((functionObject) => {
-      functionMap[functionObject.functionSignature.name] =
-        functionObject.callback;
-    });
-    return functionMap;
-  }
-  /**
    *  getToken function, calculates the tokens recieved from the gpt api
    *  @param {string} response passed into this function should the raw response from the chatgpt api
    *  @return {number} returns the number of tokens recieved from the api as a number
    */
   getToken(response) {
-    const token = response.usage.completion_tokens;
-    return parseInt(token);
+    try {
+      const token = response.usage.completion_tokens;
+      const result = parseInt(token);
+      return result;
+    } catch (e) {
+      return 0;
+    }
   }
 
   /**
@@ -93,6 +96,7 @@ export class BatchGpt {
     const flaggedCategories = Object.keys(moderationResult.categories).filter(
       (category) =>
         Number(moderationResult.category_scores[category]) >=
+        // eslint-disable-next-line comma-dangle
         this.moderationThreshold
     );
     const safeInput = {
@@ -103,180 +107,28 @@ export class BatchGpt {
     return [safeInput, moderationResult];
   }
 
-  validateRequestParameters({
-    messages,
-    minTokens,
-    functions,
-    validateJson,
-    minResponseTime,
-    timeout,
-    verbose,
-    retryCount,
-    retryDelay,
-  }) {
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      throw new Error(
-        "Invalid 'messages' parameter. It should be a non-empty array."
-      );
+  evaluateReponse(callType, response) {
+    switch (callType) {
+      case CallType.REGULAR:
+        return response.choices[0].message;
+      case CallType.IMAGE:
+        // eslint-disable-next-line no-case-declarations
+        const result = response.data[0].url;
+        return result;
+      default:
+        return response.choices[0].message;
     }
-
-    if (minTokens !== null && typeof minTokens !== "number") {
-      throw new Error(
-        "Invalid 'minTokens' parameter. It should be a number or null."
-      );
-    }
-
-    if (functions !== null && !Array.isArray(functions)) {
-      throw new Error(
-        "Invalid 'functions' parameter. It should be an array of objects."
-      );
-    }
-
-    if (functions) {
-      for (const funcObj of functions) {
-        if (
-          !funcObj ||
-          typeof funcObj !== "object" ||
-          !funcObj.functionSignature ||
-          typeof funcObj.callback !== "function"
-        ) {
-          throw new Error(
-            "Invalid 'functions' parameter. Each object in the array should have 'functionSignature' and 'callback' fields."
-          );
-        }
-      }
-    }
-
-    if (typeof validateJson !== "boolean") {
-      throw new Error(
-        "Invalid 'validateJson' parameter. It should be a boolean value."
-      );
-    }
-
-    if (minResponseTime !== null && typeof minResponseTime !== "number") {
-      throw new Error(
-        "Invalid 'minResponseTime' parameter. It should be a number or null."
-      );
-    }
-
-    if (timeout !== null && (typeof timeout !== "number" || timeout <= 0)) {
-      throw new Error(
-        "Invalid 'timeout' parameter. It should be a number greater than zero or null."
-      );
-    }
-
-    if (verbose !== "NONE" && verbose !== "INFO" && verbose !== "DEBUG") {
-      throw new Error(
-        "Invalid 'verbose' parameter. It should be one of 'NONE', 'INFO', or 'DEBUG'."
-      );
-    }
-
-    if (
-      retryCount !== null &&
-      (typeof retryCount !== "number" || retryCount < 0)
-    ) {
-      throw new Error(
-        "Invalid 'retryCount' parameter. It should be a non-negative number or null."
-      );
-    }
-
-    if (
-      retryDelay !== null &&
-      typeof retryDelay !== "number" &&
-      typeof retryDelay !== "function"
-    ) {
-      throw new Error(
-        "Invalid 'retryDelay' parameter. It should be a number, null, or a function."
-      );
-    }
-
-    // If retryDelay is a function, validate its signature
-    if (typeof retryDelay === "function" && retryDelay.length !== 1) {
-      throw new Error(
-        "Invalid 'retryDelay' function signature. It should take one parameter (current value of retryCount)."
-      );
-    }
-
-    // Validate other parameters as needed...
-
-    // If all checks pass, return true
-    return true;
-  }
-
-  validateParallelParameters({
-    messageList,
-    onResponse,
-    verbose,
-    minResponseTime,
-    minTokens,
-    timeout,
-    retryCount,
-    retryDelay,
-    concurrency,
-  }) {
-    // Validate messageList
-    if (!Array.isArray(messageList) || messageList.length === 0) {
-      throw new Error(
-        "messageList must be a non-empty array of message objects."
-      );
-    }
-
-    // Validate onResponse callback
-    if (typeof onResponse !== "function") {
-      throw new Error("onResponse must be a function.");
-    }
-
-    // Validate verbose
-    if (verbose !== "NONE" && verbose !== "INFO" && verbose !== "DEBUG") {
-      throw new Error("verbose must be one of 'NONE', 'INFO', or 'DEBUG'.");
-    }
-
-    // Validate minResponseTime
-    if (minResponseTime !== null && typeof minResponseTime !== "number") {
-      throw new Error("minResponseTime must be a number or null.");
-    }
-
-    // Validate minTokens
-    if (minTokens !== null && typeof minTokens !== "number") {
-      throw new Error("minTokens must be a number or null.");
-    }
-
-    // Validate timeout
-    if (timeout !== null && (typeof timeout !== "number" || timeout < 0)) {
-      throw new Error("timeout must be a non-negative number or null.");
-    }
-
-    // Validate retryCount
-    if (typeof retryCount !== "number" || retryCount < 0) {
-      throw new Error("retryCount must be a non-negative number.");
-    }
-
-    // Validate retryDelay
-    if (
-      retryDelay !== null &&
-      (typeof retryDelay !== "number" || retryDelay < 0)
-    ) {
-      throw new Error("retryDelay must be a non-negative number or null.");
-    }
-
-    // Validate concurrency
-    if (typeof concurrency !== "number" || concurrency <= 0) {
-      throw new Error("concurrency must be a positive number.");
-    }
-
-    // If all validations pass, return true or perform further logic
-    return true;
   }
 
   /**
    * Sends a request to the ChatGPT API, allowing two approaches: regular GPT prompting or GPT function calling.
    *
    * @param {Array<{role: string, content: string}>} messages - List of prompt messages to send to the API.
-   * @param {Array<{functionSignature: Object, callback: any}>} functions - List of function signatures and corresponding functions for GPT function calling approach.
    * @param {number | null} timeout - Maximum time allowed for the request. Default is 5 minutes (300,000 milliseconds). Set to null for no timeout.
    * @param {number | null} minTokens - Minimum number of tokens a response should have to be regarded as valid. Default is null.
    * @param {number | null} minResponseTime - Minimum time a response should take to be considered valid. Default is null.
    * @param {"NONE" | "INFO" | "DEBUG"} verbose - Verbosity setting for the request. Default is "NONE".
+   * @param {string} image_model - Specify image model to use for image generation. Default is "dall-e-3".
    * @param {number} retryCount - Number of retries for the request. Default is 0 if not specified.
    * @param {number | function(): number} retryDelay - Delay between retries for the request. Default is 0.
    * @param {boolean} validateJson - Ensures that the response is valid JSON. Default is true.
@@ -287,15 +139,16 @@ export class BatchGpt {
    */
   async request({
     messages,
-    functions = null,
     timeout = this.timeout,
     verbose = this.verbose,
     minTokens = this.minTokens,
     retryCount = this.retryCount,
     retryDelay = this.retryDelay,
+    image_model = this.image_model,
     validateJson = this.validateJson,
     minResponseTime = this.minResponseTime,
   }) {
+    let callType = CallType.REGULAR;
     let error = null;
     let gptResponse = null;
     let retryAttempt = -1;
@@ -307,15 +160,17 @@ export class BatchGpt {
     const logWarn = logger.warn.bind(logger);
     const logError = logger.error.bind(logger);
 
+    logInfo("Initializing request");
+
     // analyze set parameters
-    this.validateRequestParameters({
+    validateRequestParameters({
       messages,
       timeout,
       verbose,
       minTokens,
-      functions,
       retryCount,
       retryDelay,
+      image_model,
       validateJson,
       minResponseTime,
     });
@@ -336,12 +191,10 @@ export class BatchGpt {
         "Moderation threshold set but moderation is not enabled, moderation threshold will be ignored"
       );
     }
-
-    if (validateJson && functions) {
-      logWarn(
-        "validateJson will nullify function calling and will cause only the parameters defined in the function call signature to be returned"
-      );
+    if (this.image_model) {
+      logWarn("Image model set to ", this.image_model);
     }
+
     // Instantiate a queue object
     const queue = new PQueue({ timeout, throwOnTimeout: true });
     let moderation;
@@ -368,10 +221,18 @@ export class BatchGpt {
       }
     }
 
+    if (image_model) {
+      callType = CallType.IMAGE;
+    } else {
+      callType = CallType.REGULAR;
+    }
+    logInfo("Call type: ", callType);
+
     // while loop for retrying requests
     while (retryAttempt < retryCount) {
       let start;
       let end;
+      let requestFn;
       let responseContent = null;
       retryAttempt++;
       error = null;
@@ -384,67 +245,40 @@ export class BatchGpt {
         // Start timer
         start = Date.now();
 
-        const response = await queue.add(async () =>
-          functions
-            ? this.openai.chat.completions.create({
-                messages,
-                functions: functions.map((fn) => fn.functionSignature),
-                model: this.model,
-                temperature: this.temperature,
-              })
-            : this.openai.chat.completions.create({
-                messages,
-                model: this.model,
-                temperature: this.temperature,
-              })
-        );
+        // Decide how to call openai api based on the callType
+        switch (callType) {
+          case CallType.REGULAR:
+            requestFn = this.openai.chat.completions.create({
+              messages,
+              model: this.model,
+              temperature: this.temperature,
+            });
+            break;
+          case CallType.IMAGE:
+            logInfo("Generating image");
+            logInfo("Image model: ", this.image_model);
+            logInfo("Prompt: ", messages[1].content);
+            requestFn = this.openai.images.generate({
+              model: this.image_model,
+              prompt: messages[1].content,
+              // size: "1024*1024",
+              n: 1,
+            });
+            break;
+        }
+        const response = await queue.add(async () => requestFn);
 
         end = Date.now();
-
         // Check if response is undefined due to timeout
         if (response === undefined) throw new Error("Request timed out");
 
         // get response content from the api
-        responseContent = response.choices[0].message;
+        responseContent = this.evaluateReponse(callType, response);
+        logInfo("Response content", responseContent);
 
-        // function calling can be used in two ways, the first way is (to get a forced JSON response from chatGPT)
-        // the next way is to allow chat gpt to call an external function
-        let fnCallArguments = null;
-        let fnResponse = null;
-        if (functions) {
-          // if call is invoked as a function call
-          if (!responseContent.function_call) {
-            logError(
-              "Input Indicates function call but GPT did not return one"
-            );
-            throw new Error("Not a function call");
-          }
-
-          // if the call is a function call then we need to know which function to call
-          const functionCallName = responseContent.function_call.name;
-          const functionMap = this.generateFunctionMap(functions);
-
-          // Check if response is empty or valid JSON
-          fnCallArguments = utils.fromJsonToObject(
-            responseContent.function_call.arguments
-          );
-          if (Object.keys(fnCallArguments).length === 0) {
-            // logError("Recieved Empty response from function call arguments");
-            throw new Error("Empty response");
-          }
-
-          // call the function if it exists and if ensureJSON is false
-          if (!validateJson && functionMap[functionCallName]) {
-            const fn = functionMap[functionCallName];
-            fnResponse = await fn(fnCallArguments);
-          }
-        } else {
-          // if call is invoked as a regular gpt prompt
+        if (callType === CallType.REGULAR) {
           // Check if response is empty or valid JSON
           if (validateJson && !utils.isJson(responseContent.content)) {
-            // logError(
-            //   "validateJson set to True but Invalid JSON response recieved. Check your prompt"
-            // );
             throw new Error("Invalid JSON response");
           }
         }
@@ -466,11 +300,22 @@ export class BatchGpt {
             `Response is unreliable. Tokens received ${tokens} < minTokens ${minTokens}}`
           );
         }
+
+        let time_per_token;
         // if all checks pass, log status history and break out of while loop
+        if ((tokens === 0) | (tokens === null)) {
+          time_per_token = "Unknown";
+        } else {
+          time_per_token = Math.round(responseTime / tokens);
+        }
         gptResponse = {
           moderation: moderationResult,
-          content: fnResponse || fnCallArguments || responseContent.content,
-          time_per_token: Math.round(responseTime / tokens),
+          content:
+            (responseContent.content
+              ? responseContent.content
+              : responseContent) || null,
+          rawContent: JSON.stringify(response, null, 4),
+          time_per_token,
         };
         statusHistory.push({
           moderation: moderationResult,
@@ -487,11 +332,10 @@ export class BatchGpt {
         // even though the response failed we can still set it to the response content
         gptResponse = {
           moderation: moderationResult,
-          content: responseContent.content,
+          content: responseContent.content || responseContent,
           time_per_token: null,
         };
 
-        logError(e.message);
         end = Date.now();
         // if any one of the try block fails, log the status history and retry the request
         error = e.message;
@@ -518,7 +362,7 @@ export class BatchGpt {
     }
 
     logInfo("Request completed");
-    logInfo("Error:", error);
+    logError("Error:", error);
     logInfo(
       "Response:\n",
       gptResponse.content,
@@ -557,7 +401,7 @@ export class BatchGpt {
     minResponseTime = this.minResponseTime,
   }) {
     // validate parameters
-    this.validateParallelParameters({
+    validateParallelParameters({
       verbose,
       timeout,
       minTokens,
@@ -579,7 +423,6 @@ export class BatchGpt {
         const fn = this.request.bind(this);
         const response = fn({
           messages: [{ role: "user", content: message.prompt }],
-          functions: message.functions ? [message.functions] : null,
           verbose,
           minTokens,
           minResponseTime,

@@ -43,7 +43,8 @@ Below is a list of all the parameters that can be set in the constructor of the 
 | Parameters          | Default         | Description                                                                                                                                                                                                                                                                                                                                                                                                               | Required |
 | ------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | openai              |                 | An instance of the OpenAI API client used to interface with the API services. It's required for making requests to OpenAI's models.                                                                                                                                                                                                                                                                                       | Yes      |
-| model               | "gpt-3.5-turbo" | The specific language model to be initialized for API interactions. The default is "gpt-3.5-turbo," but you can specify other models supported by OpenAI if needed.                                                                                                                                                                                                                                                       | No       |
+| model               | "gpt-3.5-turbo" | The specific language model to be initialized for API interactions. The default is "gpt-3.5-turbo," but you can specify other models supported by OpenAI if needed.                                                                      
+| image-model               | null | The specific image generation model to be initialized for API interactions. The default is null but you can specify other models supported by OpenAI if needed i.e ["dall-e-3", dall-e-2 ].                                                                                                                                                                                     | No       |
 | temperature         | 1               | A parameter controlling the randomness of the model's responses. Higher values (e.g., 1.0) make the output more random, while lower values (e.g., 0.2) make it more focused and deterministic. For further details, refer to the [OpenAI documentation](https://platform.openai.com/docs/api-reference/chat).                                                                                                             | No       |
 | validateJson        | false           | Validates if the response received is a valid JSON.                                                                                                                                                                                                                                                                                                                                                                       | No       |
 | retryCount          | 0               | The number of times a failed request will be retried before giving up. If set to 0, no retries will be attempted.                                                                                                                                                                                                                                                                                                         | No       |
@@ -106,8 +107,8 @@ Below is a list of all the parameters that can be set for the `request` function
 
 | Parameters      | Default         | Description                                                                                                                                                                                                                                                                                                                                                                                                               | Required |
 | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| messages        |                 | A list of prompt messages to be sent to the API.                                                                                                                                                                                                                                                                                                                                                                          | Yes      |
-| functions       | null            | An optional list of function signatures for GPT "function calling" approach.                                                                                                                                                                                                                                                                                                                                              | No       |
+| messages        |                 | A list of prompt messages to be sent to the API.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | No       |
+| image-model        |         null        | Image model for image generation and manipulation tasks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | No       |
 | retryCount      | 0               | Number of retry attempts per request in case of failure.                                                                                                                                                                                                                                                                                                                                                                  | No       |
 | retryDelay      | null            | Time interval (in milliseconds) to wait before retrying a failed request. Can be a function `(count) => count * 500`. Null for no delay.                                                                                                                                                                                                                                                                                  | No       |
 | validateJson    | false           | If set to true, validates the response to ensure it is in a proper JSON format. Applicable for both regular requests and function calls. Set to false for default GPT behavior.                                                                                                                                                                                                                                           | No       |
@@ -130,57 +131,13 @@ The function yields an array of objects arranged as follows:
 | `response`      | `{moderation: object, content:string, time_per_token: number}`                        | Contains the response received from the GPT API for the given request.                                                                         |
 | `statusHistory` | `Array<{status: string,  response: object }>` | This is an array of objects whereby each object contains information about each attempted request. The object contains two properties the status: this tells if the request was successfull or not and the response: Which contains whatever was returned from the request regardless of the status |
 
-### Simple example
+### Example
 
 ```js
 // Assuming we continue for the Simple Constructor Example
 const messages = [{ role: "user", content: "YOUR PROMPT" }];
 const [err, response] = await batchGpt.request({ messages });
 ```
-
-### Advanced example
-
-```js
-// Assuming we continue for the Simple Constructor Example
-
-const functions = [
-  {
-    functionSignature: {
-      name: "get_current_weather",
-      description: "Get the current weather in a given location",
-      parameters: {
-        type: "object",
-        properties: {
-          location: {
-            type: "string",
-            description: "The city and state, e.g. San Francisco, CA",
-          },
-          unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-        },
-        required: ["location"],
-      },
-    },
-    callback: async ({ location }) => {
-      return {
-        location,
-        temperature: "72",
-        unit: "fahrenheit",
-        forecast: ["sunny", "windy"],
-      };
-    },
-  },
-];
-
-const [error, response, statusHistory] = await batchGpt.request({
-  messages: [{ role: "user", content: "What is the weather in Albuquerque?" }],
-  functions,
-  verbose: true,
-  validateJson: true,
-});
-
-console.log(error, response, statusHistory);
-```
-
 ## `parallel` function
 
 The `parallel` function is a powerful tool that enables the concurrent processing of multiple requests by sending them simultaneously to the ChatGpt API. It accepts a set of configurable parameters, including message objects, concurrency settings, and a callback function for result handling.
@@ -203,13 +160,12 @@ Below is a list of all the parameters that can be set for the parallel function.
 
 **Explanation:**
 
-**messageList:** `Array<{prompt: string, functions: Array<{functionSignature: object, callback: any}>, validateJson: boolean}>`
+**messageList:** `Array<{prompt: string, validateJson: boolean}>`
 
 The messageList parameter is an array of objects that contains the prompts to be sent to the BatchGpt parallel function. However each object that constitutes a message require the following attributes which help configure how that request will be processed.
 
 1.  prompt: This is the prompt sent to ChatGPT api
-2.  functions: This is an array of type `{functionSignature: object, callback: any}`, when this value is not null, this indicates a function call and helps configure to prompt to use ChatGPT's "function calling" syntax. The functionSignature specifies the signature of the function and the callback is the function to be called ChatGPT decides to call the function.
-3.  validateJson: Validates if the response received is a valid.
+2.  validateJson: Validates if the response received is a valid.
 
 ### Return
 
@@ -218,7 +174,7 @@ The function returns an array of objects in the same positional order as shown b
 | return       | type                                               | Description                                                                                                                |
 | ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | errors       | `Array<string>` \| `null`                          | This is a list of requests that errored out an errorList                                                                   |
-| responses    | `Array<{moderation: object, content: string, time_per_token: number}>` | This is an arrary of all the response content objects for each request and the moderation result if any (for the user's prompt)                                                     |
+| responses    | `Array<{moderation: object, content: string, rawContent: string, time_per_token: number}>` | This is an array of all the response content objects for each request and the moderation result if any (for the user's prompt)                                                     |
 | rawResponses | `Array<object>`                                    | This is an array containing the raw results of each request. Basically an array of the return type of the request function |
 
 ### Simple example
@@ -260,7 +216,7 @@ async function main() {
           prompt: `Translate '${task.text}' to ${task.language}. Your response should be in the following valid JSON structure: { "word": ".." , "fromLanguage": ".." , translation: "..", toLanguage: ".."}`,
         };
       }),
-      concurrency: 3,
+      concurrency: 2,
       retryCount: 3,                            // Retry each task 3 times on failure
       retryDelay: (value) => value * 1000,      // Retry delay in milliseconds
       onResponse: (result) => {

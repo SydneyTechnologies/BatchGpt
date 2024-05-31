@@ -9,6 +9,9 @@
     "openai": "^4.8.0",
     "p-queue": "^7.4.1"
   },
+  "scripts": {
+    "lint": "eslint ."
+  },
   "keywords": [
     "openai",
     "chatbot",
