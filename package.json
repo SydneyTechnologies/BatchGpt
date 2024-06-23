@@ -1,11 +1,11 @@
 {
   "name": "batch-gpt",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Perform multiple ChatGPT queries in parallel using the OpenAI API",
   "type": "module",
   "license": "MIT",
-  "main": "./index.js",
-  "exports": "./index.js",
+  "main": "./lib/BatchGpt.js",
+  "exports": "./lib/BatchGpt.js",
   "files": [
     "lib",
     "README.md"
@@ -13,10 +13,13 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "openai": "^4.47.3",
-    "p-queue": "^8.0.1"
+    "p-queue": "^8.0.1",
+    "pino": "^9.2.0",
+    "pino-pretty": "^11.2.1"
   },
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node test.js"
   },
   "keywords": [
     "openai",
