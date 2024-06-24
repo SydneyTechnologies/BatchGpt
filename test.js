@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 import { BatchGpt, logLevels } from "./lib/BatchGpt.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
@@ -29,29 +30,43 @@ const batchGpt = new BatchGpt({
 // }
 
 async function main() {
-  const messages = [
-    {
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text: `What’s in this image? generate search terms that can easily capture the essense of the image and provide the result as a JSON object
-          as expressed below
-          { searchTerms: [“term1”, “term2”, “term3”] } 
-           `,
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-          },
-        },
-      ],
-    },
-  ];
+  // const messages = [
+  //   {
+  //     role: "user",
+  //     content: [
+  //       {
+  //         type: "text",
+  //         text: [
+  //           "What's in this image? generate search terms that can easily capture the essense of the image and provide the result as a JSON object as expressed below:",
+  //           '{ searchTerms: ["term1", "term2", "term3"] }',
+  //         ].join("\n"),
+  //       },
+  //       {
+  //         type: "image_url",
+  //         image_url: {
+  //           url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+  //         },
+  //       },
+  //     ],
+  //   },
+  // ];
   const [error, response] = await batchGpt.request({
+    prompt: [
+      {
+        type: "text",
+        text: [
+          "What's in this image? generate search terms that can easily capture the essense of the image and provide the result as a JSON object as expressed below:",
+          '{ searchTerms: ["term1", "term2", "term3"] }',
+        ].join("\n"),
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+        },
+      },
+    ],
     requestOptions: {
-      messages,
       model: "gpt-4o",
     },
   });
