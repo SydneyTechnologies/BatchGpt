@@ -12,6 +12,7 @@
   ],
   "dependencies": {
     "dotenv": "^16.4.5",
+    "file-type": "^19.0.0",
     "openai": "^4.47.3",
     "p-queue": "^8.0.1",
     "pino": "^9.2.0",

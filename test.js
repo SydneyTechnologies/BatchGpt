@@ -13,66 +13,31 @@ const batchGpt = new BatchGpt({
   logLevel: logLevels.DEBUG,
 });
 
-// async function main() {
-//   const messages = [
-//     "Create an image iphone 16",
-//     "Create an image of a water bottle beside the Eiffel Tower.",
-//     "Create an image of kyrptonian Crocodile",
-//   ];
-//   const [res1, res2, res3] = await batchGpt.parallel({
-//     messageList: messages,
-//     requestOptions: {
-//       imageModel: "dall-e-3",
-//     },
-//   });
-
-//   console.log(res1, res2, res3);
-// }
-
 async function main() {
-  // const messages = [
-  //   {
-  //     role: "user",
-  //     content: [
-  //       {
-  //         type: "text",
-  //         text: [
-  //           "What's in this image? generate search terms that can easily capture the essense of the image and provide the result as a JSON object as expressed below:",
-  //           '{ searchTerms: ["term1", "term2", "term3"] }',
-  //         ].join("\n"),
-  //       },
-  //       {
-  //         type: "image_url",
-  //         image_url: {
-  //           url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-  //         },
-  //       },
-  //     ],
-  //   },
-  // ];
-  const [error, response] = await batchGpt.request({
-    prompt: [
-      {
-        type: "text",
-        text: [
-          "What's in this image? generate search terms that can easily capture the essense of the image and provide the result as a JSON object as expressed below:",
-          '{ searchTerms: ["term1", "term2", "term3"] }',
-        ].join("\n"),
-      },
-      {
-        type: "image_url",
-        image_url: {
-          url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-        },
-      },
-    ],
-    requestOptions: {
-      model: "gpt-4o",
-    },
+  // GENERATE IMAGES
+  // const [error, response] = await batchGpt.generateImage({
+  //   prompt: "A painting of a beautiful sunset over the ocean",
+  // });
+
+  // GET IMAGE DESCRIPTION
+  // const [error, response] = await batchGpt.generateImageDescription({
+  //   image:
+  //     "https://plus.unsplash.com/premium_photo-1661765778256-169bf5e561a6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //   level: "low",
+  // });
+
+  // GET IMAGE TAGS
+  const [error, response] = await batchGpt.generateImageTags({
+    image:
+      "https://plus.unsplash.com/premium_photo-1661765778256-169bf5e561a6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    searchTermCount: 1,
+    randomness: 10,
   });
 
   if (!error) {
+    console.log("Images generated successfully");
     console.log(response);
   }
 }
+
 main();
