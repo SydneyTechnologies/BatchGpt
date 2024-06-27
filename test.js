@@ -2,7 +2,7 @@
 import { BatchGpt, logLevels } from "./lib/BatchGpt.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-// import fs from "fs";
+import fs from "fs";
 
 // load environment variables
 dotenv.config();
@@ -12,6 +12,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const batchGpt = new BatchGpt({
   openai,
   logLevel: logLevels.DEBUG,
+  model: "gpt-4o",
 });
 
 async function main() {
@@ -28,9 +29,15 @@ async function main() {
   // });
 
   // GET IMAGE TAGS
+
+  const imageBuffer = fs.readFileSync("./pyramid.png");
   const [error, response] = await batchGpt.generateImageTags({
-    context: "valley",
+    // context: "valley",
+    image: imageBuffer,
     searchTermCount: 5,
+    requestOptions: {
+      model: "gpt-4o",
+    },
     // randomness: 10,
   });
 
