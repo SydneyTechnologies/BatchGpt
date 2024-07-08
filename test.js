@@ -2,7 +2,7 @@
 import { BatchGpt, logLevels } from "./lib/BatchGpt.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import fs from "fs";
+// import fs from "fs";
 
 // load environment variables
 dotenv.config();
@@ -17,8 +17,21 @@ const batchGpt = new BatchGpt({
 
 async function main() {
   // GENERATE IMAGES
+  try {
+    const response = await batchGpt.editImage({
+      prompt: "A bird flying",
+      image: "image.png",
+      mask: "mask.png",
+    });
+
+    console.log(JSON.stringify(response, null, 2));
+  } catch (e) {
+    console.log(e.message);
+  }
+
   // const [error, response] = await batchGpt.generateImage({
-  //   prompt: "A dog playing in a park",
+  //   prompt: "Generate an image for a welcome section of a bakery website",
+  //   imageModel: "dall-e-2"
   // });
 
   // GET IMAGE DESCRIPTION
@@ -30,21 +43,21 @@ async function main() {
 
   // GET IMAGE TAGS
 
-  const imageBuffer = fs.readFileSync("./pyramid.png");
-  const [error, response] = await batchGpt.generateImageTags({
-    // context: "valley",
-    image: imageBuffer,
-    searchTermCount: 5,
-    requestOptions: {
-      model: "gpt-4o",
-    },
-    // randomness: 10,
-  });
+  // const imageBuffer = fs.readFileSync("./pyramid.png");
+  // const [error, response] = await batchGpt.generateImageTags({
+  //   // context: "valley",
+  //   image: imageBuffer,
+  //   searchTermCount: 5,
+  //   requestOptions: {
+  //     model: "gpt-4o",
+  //   },
+  //   // randomness: 10,
+  // });
 
-  if (!error) {
-    console.log("Images generated successfully");
-    console.log(response);
-  }
+  // if (!error) {
+  //   console.log("Images generated successfully");
+  //   console.log(response);
+  // }
 }
 
 main();
