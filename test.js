@@ -1,63 +1,70 @@
-/* eslint-disable quotes */
-import { BatchGpt, logLevels } from "./lib/BatchGpt.js";
-import OpenAI from "openai";
-import dotenv from "dotenv";
-// import fs from "fs";
+//@ts-check
+import { OpenAI } from "openai";
+import { BatchGpt } from "./lib/BatchGpt.js";
+import { logLevels } from "./lib/constants.js";
+import { config } from "dotenv";
 
-// load environment variables
-dotenv.config();
+config();
 
-// setup
+// TEST BATCH GPT METHODS
+
+// AVAILABLE METHODS INCLUDE
+// request,
+// parallel,
+// getImageDescription
+// getImageTags
+
+// Initialize the BatchGpt class
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 const batchGpt = new BatchGpt({
   openai,
-  logLevel: logLevels.DEBUG,
-  model: "gpt-4o",
+  model: "gpt-3.5-turbo",
+  logLevel: logLevels.SILENT,
 });
 
-async function main() {
-  // GENERATE IMAGES
-  try {
-    const response = await batchGpt.editImage({
-      prompt: "A bird flying",
-      image: "image.png",
-      mask: "mask.png",
-    });
+// Test the request method
+// batchGpt
+//   .request({
+//     prompt: "What is the capital of France?",
+//   })
+//   .then(([error, response]) => {
+//     error;
+//     console.log(response.response.choices[0].message.content);
+//   });
 
-    console.log(JSON.stringify(response, null, 2));
-  } catch (e) {
-    console.log(e.message);
-  }
+// // Test the parallel method
+// batchGpt
+//   .parallel({
+//     concurrency: 2,
+//     messages: [
+//       "What is the capital of France?",
+//       "What is the capital of Germany?",
+//     ],
+//   })
+//   .then((result) => {
+//     result.forEach(([err, response]) => {
+//       err;
+//       console.log(response.response.choices[0].message.content);
+//     });
+//   });
 
-  // const [error, response] = await batchGpt.generateImage({
-  //   prompt: "Generate an image for a welcome section of a bakery website",
-  //   imageModel: "dall-e-2"
-  // });
+// batchGpt
+//   .generateImageTags({
+//     image:
+//       "https://images.unsplash.com/photo-1511216113906-8f57bb83e776?q=80&w=2848&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+//   })
+//   .then(([error, response]) => {
+//     console.log(error, response);
+//   });
 
-  // GET IMAGE DESCRIPTION
-  // const [error, response] = await batchGpt.generateImageDescription({
-  //   image:
-  //     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Lince_ib%C3%A9rico_%28Lynx_pardinus%29%2C_Almuradiel%2C_Ciudad_Real%2C_Espa%C3%B1a%2C_2021-12-19%2C_DD_07.jpg/1920px-Lince_ib%C3%A9rico_%28Lynx_pardinus%29%2C_Almuradiel%2C_Ciudad_Real%2C_Espa%C3%B1a%2C_2021-12-19%2C_DD_07.jpg",
-  //   level: "low",
-  // });
-
-  // GET IMAGE TAGS
-
-  // const imageBuffer = fs.readFileSync("./pyramid.png");
-  // const [error, response] = await batchGpt.generateImageTags({
-  //   // context: "valley",
-  //   image: imageBuffer,
-  //   searchTermCount: 5,
-  //   requestOptions: {
-  //     model: "gpt-4o",
-  //   },
-  //   // randomness: 10,
-  // });
-
-  // if (!error) {
-  //   console.log("Images generated successfully");
-  //   console.log(response);
-  // }
-}
-
-main();
+batchGpt
+  .imageDescription({
+    image:
+      "https://images.unsplash.com/photo-1511216113906-8f57bb83e776?q=80&w=2848&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  })
+  .then(([error, response]) => {
+    error;
+    console.log(response?.response.choices[0].message.content);
+  });
