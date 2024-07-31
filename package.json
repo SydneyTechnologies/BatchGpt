@@ -1,6 +1,6 @@
 {
   "name": "batch-gpt",
-  "version": "0.0.16",
+  "version": "0.0.17s",
   "description": "Perform multiple ChatGPT queries in parallel using the OpenAI API",
   "type": "module",
   "license": "MIT",
