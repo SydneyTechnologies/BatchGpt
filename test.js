@@ -21,7 +21,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const batchGpt = new BatchGpt({
   openai,
   model: "gpt-3.5-turbo",
-  logLevel: logLevels.SILENT,
+  logLevel: logLevels.DEBUG,
 });
 
 // Test the request method
